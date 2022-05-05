@@ -53,6 +53,8 @@ fn main() {
     let reporter = ChannelReporter::new(sender, disconnect_receiver);
 
     // This one is also included with the library. It also needs to be hooked up with a channel.
+    // It's EventListener implementation spawns a thread in which event messages will be handled.
+    // Events are send to this thread using channels, therefore the name ChannelEventListener ✨.
     let listener = ChannelEventListener::new(receiver, disconnect_sender);
 
     // Here we use the jsonlines handler we defined above, in combination with the default `EventListener`
@@ -60,7 +62,9 @@ fn main() {
     //
     // If we don't run the handler, we'll end up in an infinite loop, because our `reporter.disconnect()`
     // below will block until it receives a Disconnect message.
-    // Besides, if we don't run the handler, we would not need this library at all =).
+    // Besides, if we don't run the handler, we would not need this library =). 
+    // 
+    // Also: as described above, it spawns a thread which handles updates, so it won't block.
     listener.run_handler(handler);
 
     // These are the events we would call during the regular flow of our program, for example
