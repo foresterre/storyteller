@@ -60,8 +60,12 @@ fn main() {
     //
     // If we don't run the handler, we'll end up in an infinite loop, because our `reporter.disconnect()`
     // below will block until it receives a Disconnect message.
+    // Besides, if we don't run the handler, we would not need this library at all =).
     listener.run_handler(handler);
 
+    // These are the events we would call during the regular flow of our program, for example
+    // if we use the library in a package manager, before, during or after downloading dependencies.
+    // The use any-event-type-you-like nature allows you to go as crazy as you would like. 
     #[allow(unused_must_use)]
     // sending events can fail, but we'll assume they won't for this example
     {
@@ -84,11 +88,14 @@ fn main() {
         reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
     }
 
+    // Finish handling reported events, then disconnect the channels.
+    // If not called, messages which have not been handled by the handler may be discarded. 
     let _ = reporter.disconnect();
 }
 
-// ------- Events + Disconnect
+// ------- Events
 
+// if we would have imported third-party libraries, we could have done: #[derive(serde::Serialize)]
 enum ExampleEvent {
     Event(MyEvent),
     Text(String),
@@ -105,6 +112,8 @@ impl ExampleEvent {
 }
 
 impl ExampleEvent {
+    // Here we create some json by hand, so you can copy the example without importing other libraries, but you can also
+    // replace all of this by, say `serde_json`, and derive a complete json output of your `Event` definition all at once (by design™ =)).
     pub fn to_json(&self) -> String {
         match self {
             Self::Event(event) => event.to_json(),
@@ -172,6 +181,10 @@ impl EventHandler for JsonHandler {
 This library is a refined implementation based on an earlier [experiment](https://github.com/foresterre/rust-experiment-air3/blob/main/src/main.rs).
 It is intended to be used by, and was developed because of, [cargo-msrv](https://github.com/foresterre/cargo-msrv) 
 which has outgrown its current user output implementation.
+
+## Contributions
+
+Contributions, feedback or other correspondence are more than welcome! Feel free to send a message or create an issue 😄.
 
 ## License
 
