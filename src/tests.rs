@@ -1,7 +1,16 @@
 #![allow(unused_must_use)]
 
-use crate::{ChannelEventListener, ChannelReporter, EventHandler, EventListener, Reporter};
-use crossbeam_channel::{Receiver, Sender};
+// TODO: now we have a working proof of concept, and are starting to refine the library,
+//  we also should start testing it properly! ^^
+
+// TODO: implenent a FakeHandler, like in cargo-msrv and use it to test whether certain events happened
+
+// TODO: test a MultiHandler like the one in rust-experiment-air3
+
+use crate::{
+    disconnect_channel, event_channel, ChannelEventListener, ChannelReporter, EventHandler,
+    EventListener, Reporter,
+};
 use serde::Serialize;
 use std::io::{Stderr, Write};
 use std::sync::{Arc, Mutex};
@@ -32,90 +41,7 @@ enum MyEvent {
     Reset,
 }
 
-struct Disconnect;
-
-// ------- Reporter
-
-struct CargoMsrvReporter {
-    message_sender: Sender<ExampleEvent>,
-    disconnect_receiver: Receiver<Disconnect>,
-}
-
-impl Reporter for CargoMsrvReporter {
-    type Event = ExampleEvent;
-    type Disconnect = Disconnect;
-    type Err = ();
-
-    fn report_event(&self, event: Self::Event) -> Result<(), Self::Err> {
-        println!("sending event! (T=1)");
-        self.message_sender.send(event).map_err(|_| ())
-    }
-
-    fn disconnect(self) -> Disconnect {
-        drop(self.message_sender);
-
-        self.disconnect_receiver.recv().unwrap()
-    }
-}
-
-impl ChannelReporter for CargoMsrvReporter {
-    fn setup(
-        message_sender: Sender<Self::Event>,
-        disconnect_receiver: Receiver<Self::Disconnect>,
-    ) -> Self {
-        Self {
-            message_sender,
-            disconnect_receiver,
-        }
-    }
-}
-
-// ------- Listener
-
-struct CargoMsrvListener {
-    #[allow(unused)]
-    thread_handle: thread::JoinHandle<()>,
-}
-
-impl EventListener for CargoMsrvListener {
-    type Event = ExampleEvent;
-    type Disconnect = Disconnect;
-}
-
-impl ChannelEventListener for CargoMsrvListener {
-    fn setup<H>(
-        message_receiver: Receiver<Self::Event>,
-        disconnect_sender: Sender<Self::Disconnect>,
-        handler: H,
-    ) -> Self
-    where
-        H: EventHandler<Event = Self::Event>,
-    {
-        let thread_handle = thread::spawn(move || {
-            let disconnect_sender = disconnect_sender;
-
-            loop {
-                let recv = message_receiver.recv();
-
-                println!("received event! (T=2)");
-
-                match recv {
-                    Ok(message) => handler.handle(message),
-                    Err(_disconnect) => {
-                        handler.finish();
-                        eprintln!("\n\nSender closed!");
-                        disconnect_sender.send(Disconnect).unwrap();
-                        break;
-                    }
-                }
-            }
-        });
-
-        Self { thread_handle }
-    }
-}
-
-// -----
+// -- a Handler
 
 struct IndicatifHandler {
     bar: indicatif::ProgressBar,
@@ -180,7 +106,7 @@ impl EventHandler for JsonHandler {
         let message = serde_json::to_string(&event).unwrap_or_default();
 
         let mut out = self.stdout.lock().unwrap();
-        write!(out, "{}\n", message);
+        writeln!(out, "{}", message);
         out.flush();
     }
 
@@ -189,12 +115,14 @@ impl EventHandler for JsonHandler {
 
 #[test]
 fn bar() {
-    let (sender, receiver) = crossbeam_channel::unbounded::<ExampleEvent>();
-    let (disconnect_sender, disconnect_receiver) = crossbeam_channel::bounded::<Disconnect>(0);
+    let (sender, receiver) = event_channel::<ExampleEvent>();
+    let (disconnect_sender, disconnect_receiver) = disconnect_channel();
 
     let handler = IndicatifHandler::default();
-    let reporter = CargoMsrvReporter::setup(sender, disconnect_receiver);
-    CargoMsrvListener::setup(receiver, disconnect_sender, handler);
+    let reporter = ChannelReporter::new(sender, disconnect_receiver);
+    let listener = ChannelEventListener::new(receiver, disconnect_sender);
+
+    listener.run_handler(handler);
 
     reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
@@ -221,12 +149,14 @@ fn bar() {
 
 #[test]
 fn json() {
-    let (sender, receiver) = crossbeam_channel::unbounded::<ExampleEvent>();
-    let (disconnect_sender, disconnect_receiver) = crossbeam_channel::bounded::<Disconnect>(0);
+    let (sender, receiver) = event_channel::<ExampleEvent>();
+    let (disconnect_sender, disconnect_receiver) = disconnect_channel();
 
     let handler = JsonHandler::default();
-    let reporter = CargoMsrvReporter::setup(sender, disconnect_receiver);
-    CargoMsrvListener::setup(receiver, disconnect_sender, handler);
+    let reporter = ChannelReporter::new(sender, disconnect_receiver);
+    let listener = ChannelEventListener::new(receiver, disconnect_sender);
+
+    listener.run_handler(handler);
 
     reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
