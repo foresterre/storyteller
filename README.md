@@ -17,7 +17,8 @@ The three building blocks are:
     which may be asserted on in software tests, or a handler which sends websocket messages
     for each event.
     
-* `Reporter`: Used to communicate messages to a user.
+* `Reporter`: Used to communicate messages to a user. The reporter is invoked with an Event within the code base, so you don't have to deal with formatting and display details in the middle of the program flow.
+
 * `EventListener`: Receives the messages, send by a reporter and runs the `EventHandler`
     where appropriate.
 
