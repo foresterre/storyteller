@@ -43,7 +43,7 @@ In addition to these provided elements, you have to:
 ## Visualized introduction
 
 ![visualized introduction sketch](docs/sketches/introduction_dark.svg)
-Click [here](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction_dark.svg) for a larger version.
+Click [here](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction_dark.svg) for a larger version. ([light svg](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction.svg), [dark svg](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction_dark.svg), [light png](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction.png), [dark png](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction_dark.png))
 
 ## Example
 
