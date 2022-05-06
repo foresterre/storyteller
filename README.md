@@ -4,7 +4,7 @@ _A library for working with user output_
 ## Table of contents
 
 * 👋 [Introduction](#introduction)
-* 🖼 [Visualized introduction]()
+* 🖼 [Visualized introduction](#visualized-introduction)
 * 📄 [Example source code](#example)
 * ❓ [Origins](#origins)
 * 💖 [Contributions & Feedback](#contributions)
