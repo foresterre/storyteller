@@ -8,23 +8,28 @@ options through which they can communicate, while also having various separate c
 flows) which require each to carefully specify their own output formatting.
 
 The library consists of three primary building blocks, and a default implementation on top
-of these building blocks.
+of these building blocks. It helps you setup your program architecture 
 
 The three building blocks are:
-* `EventHandler`: The event handler receives an event (our message type) as input,
-    and decides what to do with this message. Examples include a json-lines handler which
-    prints events to to stderr, a progress bar, a faked handler which collects events for
-    which may be asserted on in software tests, or a handler which sends websocket messages
-    for each event.
+* `EventHandler`: The event handler which deals with the user output, for example:
+	* A handler which formats events as json-lines, and prints them to stderr
+	* A handler which updates a progress bar
+	* A handler which collects events for software testing
+	* A handler which sends websocket messages for each event
+	* A handler which updates a user interface
     
-* `Reporter`: Used to communicate messages to a user. The reporter is invoked with an Event within the code base, so you don't have to deal with formatting and display details in the middle of the program flow.
+* `Reporter`: Called during your program logic. 
+	Used to communicate user output to a user. The reporter is invoked with an Event during the programs logic, so you don't have to deal with formatting and display details in the middle of the program flow.
 
-* `EventListener`: Receives the messages, send by a reporter and runs the `EventHandler`
-    where appropriate.
+* `EventListener`: Receives events, send by a reporter and runs the `EventHandler`. Usually spins upa separate thread so it won't block.
 
 On top of these building blocks, a channel based implementation is provided which runs the `EventHandler`
-in a separate thread. To use this implementation, consult the docs for the `crate::ChannelReporter`, and the
+in a separate thread. To use this implementation, consult the docs for the `ChannelReporter`, and the
 `ChannelEventListener`.
+
+In addition to these provided elements, you have to:
+* Define a type which can be used as Event
+* Define one or more EventHandlers (i.e. `impl EventHandler<Event = YourEventType>`).
 
 ## Example
 
@@ -37,6 +42,11 @@ use storyteller::{
     disconnect_channel, event_channel, ChannelEventListener, ChannelReporter, EventHandler,
     EventListener, Reporter,
 };
+
+// --- In the main function, we'll instantiate a Reporter, a Listener, and an EventHandler.
+//     For the reporter and listener, we'll use implementations included with the library.
+//     The EventHandler must be defined by us, and can be found below.
+//     We also need to define our event type, which can also be found below.
 
 // See the test function `bar` in src/tests.rs for an example where the handler is a progress bar.
 fn main() {
@@ -67,12 +77,20 @@ fn main() {
     // Also: as described above, it spawns a thread which handles updates, so it won't block.
     listener.run_handler(handler);
 
-    // These are the events we would call during the regular flow of our program, for example
-    // if we use the library in a package manager, before, during or after downloading dependencies.
-    // The use any-event-type-you-like nature allows you to go as crazy as you would like. 
-    #[allow(unused_must_use)]
-    // sending events can fail, but we'll assume they won't for this example
+    // Run your program's logic
+    my_programming_logic(&reporter);
+
+    // Finish handling reported events, then disconnect the channels.
+    // If not called, events which have not been handled by the event handler yet may be discarded. 
+    let _ = reporter.disconnect();
+}
+
+fn my_programming_logic(reporter: &ChannelReporter<ExampleEvent>) {
+	#[allow(unused_must_use)] // sending events can fail, but we'll assume they won't for this example
     {
+    	// These are the events we would call during the regular flow of our program, for example
+	    // if we use the library in a package manager, before, during or after downloading dependencies.
+	    // The use any-event-type-you-like nature allows you to go as crazy as you would like. 
         reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
@@ -91,13 +109,9 @@ fn main() {
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
     }
-
-    // Finish handling reported events, then disconnect the channels.
-    // If not called, messages which have not been handled by the handler may be discarded. 
-    let _ = reporter.disconnect();
 }
 
-// ------- Events
+// --- Here we define out Event Type.
 
 // if we would have imported third-party libraries, we could have done: #[derive(serde::Serialize)]
 enum ExampleEvent {
@@ -140,7 +154,7 @@ impl MyEvent {
     }
 }
 
-// ----- A handler
+// --- Here we define an Event Handler which deals with the user output.
 
 struct JsonHandler {
     stream: Arc<Mutex<Stderr>>,
