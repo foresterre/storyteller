@@ -1,4 +1,4 @@
-# Storyteller
+# 🎙 Storyteller
 _A library for working with user output_
 
 ## Table of contents
