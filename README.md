@@ -1,6 +1,15 @@
 # Storyteller
 _A library for working with user output_
 
+## Table of contents
+
+* 👋 [Introduction](#introduction)
+* 🖼 [Visualized introduction]()
+* 📄 [Example source code](#example)
+* ❓ [Origins](#origins)
+* 💖 [Contributions & Feedback](#contributions)
+* 🧾 [License](#license)
+
 ## Introduction
 
 This library is intended to be used by tools, such as cli's, which have multiple user interface
@@ -30,6 +39,10 @@ in a separate thread. To use this implementation, consult the docs for the `Chan
 In addition to these provided elements, you have to:
 * Define a type which can be used as Event
 * Define one or more EventHandlers (i.e. `impl EventHandler<Event = YourEventType>`).
+
+## Visualized introduction
+
+![visualized introduction sketch](docs/sketches/introduction_dark.svg)
 
 ## Example
 
