@@ -13,5 +13,5 @@ pub trait EventHandler: Send + 'static {
     /// when the message channel will be disconnected.
     ///
     /// It is up to the [`crate::EventListener`] to call this method.
-    fn finish(&self);
+    fn finish(&self) {}
 }
