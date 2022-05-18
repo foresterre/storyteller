@@ -36,4 +36,7 @@ pub use channel::{
 pub use handler::EventHandler;
 pub use message::Disconnect;
 pub use {listener::ChannelEventListener, listener::EventListener};
-pub use {reporter::ChannelReporter, reporter::Reporter, reporter::ReporterError};
+pub use {
+    reporter::channel_reporter::ChannelReporter, reporter::channel_reporter::ReporterError,
+    reporter::Reporter,
+};
