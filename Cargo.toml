@@ -8,6 +8,9 @@ description = "Library focused on supporting user oriented output while supporti
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/foresterre/storyteller"
 
+[package.metadata]
+msrv = "1.38"
+
 exclude = ["/.github", "docs/sketches/*.png"]
 
 [dependencies]
