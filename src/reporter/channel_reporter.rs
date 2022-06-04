@@ -61,6 +61,7 @@ impl<Event> Reporter for ChannelReporter<Event> {
     }
 }
 
+#[derive(Debug)]
 pub enum ReporterError<Event> {
     SendError(crate::EventSendError<Event>),
     DisconnectError(crate::DisconnectRecvError),

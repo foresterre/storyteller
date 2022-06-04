@@ -1,6 +1,8 @@
 //! Channels which can be used by the `ChannelReporter` and `ChannelEventListener`.
 
 use crate::Disconnect;
+use std::fmt::Formatter;
+use std::{any, fmt};
 
 // --- Event channel variants
 
@@ -32,7 +34,13 @@ impl<T> EventReceiver<T> {
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct EventSendError<T>(pub T);
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+impl<T> fmt::Debug for EventSendError<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("EventSendError({})", any::type_name::<T>()))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct EventRecvError;
 
 // --- Disconnect channel variants
