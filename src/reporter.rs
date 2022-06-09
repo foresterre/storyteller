@@ -12,7 +12,7 @@ pub trait Reporter {
     type Err;
 
     /// Send an event to listeners.
-    fn report_event(&self, event: Self::Event) -> Result<(), Self::Err>;
+    fn report_event(&self, event: impl Into<Self::Event>) -> Result<(), Self::Err>;
 
     /// Request to be disconnected.
     ///

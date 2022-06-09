@@ -40,9 +40,9 @@ impl<Event> Reporter for ChannelReporter<Event> {
     type Event = Event;
     type Err = ReporterError<Event>;
 
-    fn report_event(&self, event: Self::Event) -> Result<(), Self::Err> {
+    fn report_event(&self, event: impl Into<Self::Event>) -> Result<(), Self::Err> {
         self.message_sender
-            .send(event)
+            .send(event.into())
             .map_err(ReporterError::SendError)
     }
 
