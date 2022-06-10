@@ -181,13 +181,12 @@ where
                     Err(_disconnect) => {
                         handler.finish();
 
-                        let ack = disconnect_sender.acknowledge_disconnection();
+                        let _ack = disconnect_sender.acknowledge_disconnection();
 
-                        #[cfg(feature = "experimental-handle_disconnect_ack ")]
-                        ack.unwrap_or_default();
-
-                        #[cfg(not(feature = "experimental-handle_disconnect_ack "))]
-                        ack.expect("Failed to send disconnect acknowledgement!");
+                        #[cfg(not(feature = "experimental_handle_disconnect_ack"))]
+                        {
+                            _ack.expect("Failed to send disconnect acknowledgement!");
+                        }
 
                         break;
                     }
