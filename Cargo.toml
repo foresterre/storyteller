@@ -13,6 +13,9 @@ msrv = "1.38"
 
 exclude = ["/.github", "docs/sketches/*.png"]
 
+[features]
+experimental-handle_disconnect_ack = []
+
 [dependencies]
 crossbeam-channel = "0.5"
 
