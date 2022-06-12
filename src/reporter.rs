@@ -1,7 +1,5 @@
 use crate::message::Disconnect;
 
-pub(crate) mod channel_reporter;
-
 /// A reporter (a type of transmitter) which sends events (the message to be transmitted) to
 /// a listener (a type of receiver).
 pub trait Reporter {

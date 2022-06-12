@@ -6,22 +6,27 @@
 //! of these building blocks.
 //!
 //! The three building blocks are:
-//! * [`crate::EventHandler`]: The event handler receives an event (our message type) as input,
+//! * [`EventHandler`]: The event handler receives an event (our message type) as input,
 //!     and decides what to do with this message. Examples include a json-lines handler which
 //!     prints events to to stderr, a progress bar, a faked handler which collects events for
 //!     which may be asserted on in software tests, or a handler which sends websocket messages
 //!     for each event.
 //!     
-//! * [`crate::Reporter`]: Used to communicate messages to a user.
-//! * [`crate::EventListener`]: Receives the messages, send by a reporter and runs the `EventHandler`
+//! * [`Reporter`]: Used to communicate messages to a user.
+//! * [`EventListener`]: Receives the messages, send by a reporter and runs the `EventHandler`
 //!     where appropriate.
 //!
 //! On top of these building blocks, a channel based implementation is provided which runs the `EventHandler`
 //! in a separate thread.
-//! To use this implementation, consult the docs for the [`crate::ChannelReporter`],
-//! and the [`crate::ChannelEventListener`].
+//! To use this implementation, consult the docs for the [`ChannelReporter`],
+//! and the [`ChannelEventListener`].
+//!
+//! [`EventHandler`]: crate::EventHandler
+//! [`Reporter`]: crate::Reporter
+//! [`EventListener`]: `crate::EventListener`
+//! [`ChannelReporter`]: crate::ChannelReporter
+//! [`ChannelEventListener`]: crate::ChannelEventListener
 
-mod channel;
 mod handler;
 mod listener;
 mod message;
@@ -29,14 +34,17 @@ mod reporter;
 #[cfg(test)]
 mod tests;
 
-pub use channel::{
-    disconnect_channel, event_channel, DisconnectReceiver, DisconnectRecvError, DisconnectSender,
-    EventReceiver, EventSendError, EventSender,
+#[cfg(feature = "channel_reporter")]
+mod channel_reporter;
+
+#[cfg(feature = "channel_reporter")]
+pub use channel_reporter::{
+    channel::disconnect_channel, channel::event_channel, channel::DisconnectReceiver,
+    channel::DisconnectRecvError, channel::DisconnectSender, channel::EventReceiver,
+    channel::EventSendError, channel::EventSender, listener::ChannelEventListener,
+    reporter::ChannelReporter, reporter::ReporterError,
 };
 pub use handler::EventHandler;
+pub use listener::EventListener;
 pub use message::Disconnect;
-pub use {listener::ChannelEventListener, listener::EventListener};
-pub use {
-    reporter::channel_reporter::ChannelReporter, reporter::channel_reporter::ReporterError,
-    reporter::Reporter,
-};
+pub use reporter::Reporter;

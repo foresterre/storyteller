@@ -2,9 +2,11 @@ use std::io::{Stderr, Write};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{io, thread};
+use storyteller::EventHandler;
+
 use storyteller::{
-    disconnect_channel, event_channel, ChannelEventListener, ChannelReporter, EventHandler,
-    EventListener, Reporter,
+    disconnect_channel, event_channel, ChannelEventListener, ChannelReporter, EventListener,
+    Reporter,
 };
 
 // See the test function `bar` in src/tests.rs for an example where the handler is a progress bar.

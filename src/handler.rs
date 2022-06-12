@@ -3,7 +3,10 @@
 /// consists of a `Vec<Box<dyn EventHandler>>` and executes multiple handlers under the hood.
 pub trait EventHandler: Send + 'static {
     /// The type of event to be handled.
-    /// Usually the same type as send from a [`crate::Reporter`] to [`crate::Listener`].
+    /// Usually the same type as you would send from a [`Reporter`] to [`Listener`].
+    ///
+    /// [`Reporter`]: crate::Reporter
+    /// [`Listener`]: crate::Listener
     type Event;
 
     /// Act upon some received event.
@@ -12,6 +15,8 @@ pub trait EventHandler: Send + 'static {
     /// A final action which can be performed when no more events will be received, for example
     /// when the message channel will be disconnected.
     ///
-    /// It is up to the [`crate::EventListener`] to call this method.
+    /// It is up to the [`EventListener`] to call this method.
+    ///
+    /// [`EventListener`]: crate::EventListener
     fn finish(&self) {}
 }
