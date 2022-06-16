@@ -1,113 +1,33 @@
-use crate::{DisconnectSender, EventHandler, EventListener, EventReceiver};
+use crate::listener::FinishProcessing;
+use crate::{EventHandler, EventListener, EventReceiver};
 use std::thread;
+use std::thread::JoinHandle;
 
 /// A listener which uses a channel to receive messages of type `Event`, and uses
-/// a thread to run the event handler (in [`crate::ChannelEventListener::run_handler`].
+/// a thread to run the event handler (in [`ChannelEventListener::run_handler`]).
 ///
-/// The channels required to create an instance can be created by calling the [`crate::event_channel`]
-/// and [`crate::disconnect_channel`] functions.
+/// The channel based receiver required to create an instance can be created by calling the
+/// [`event_channel()`] function.
 ///
-/// The [`crate::Reporter`] associated with this event listener is the [`crate::ChannelReporter`].
+/// The [`Reporter`] associated with this event listener is the [`ChannelReporter`].
+///
+/// [`ChannelEventListener::run_handler`]: crate::ChannelEventListener::run_handler
+/// [`event_channel()`]: crate::event_channel
+/// [`Reporter`]: crate::Reporter
+/// [`ChannelReporter`]: crate::ChannelReporter
 pub struct ChannelEventListener<Event> {
-    message_receiver: EventReceiver<Event>,
-    disconnect_sender: DisconnectSender,
+    event_receiver: EventReceiver<Event>,
 }
 
 impl<Event> ChannelEventListener<Event> {
     /// Create a new channel based event listener.
     ///
-    /// The channels required to create an instance can be created by calling the [`crate::event_channel`]
-    /// and [`crate::disconnect_channel`] functions.
-    pub fn new(
-        message_receiver: EventReceiver<Event>,
-        disconnect_sender: DisconnectSender,
-    ) -> Self {
-        Self {
-            message_receiver,
-            disconnect_sender,
-        }
-    }
-
-    /// If you use `ChannelEventListener` by wrapping it, instead of using it directly,
-    /// for example if you want to write your own `EventListener` implementation,
-    /// you will need this `&EventReceiver` to receive events.
+    /// The channel based receiver required to create an instance can be created by calling the
+    /// [`event_channel()`] function.
     ///
-    /// ### Example
-    ///
-    /// **NB:** This example should **not** be used on its own! It does not contain a fully working listener!
-    /// See [`crate::EventListener`] on how to implement your own listener instead.
-    ///
-    /// ```no_run
-    /// // NB: This example is incomplete!
-    /// //     It does not contain a fully working listener!
-    ///
-    /// use storyteller::{ChannelEventListener, EventHandler, EventListener};
-    ///
-    /// struct MyEvent;
-    ///
-    /// struct WrappingListener {
-    ///     listener: ChannelEventListener<MyEvent>,
-    /// }
-    ///
-    /// impl EventListener for WrappingListener {
-    ///     type Event = MyEvent;
-    ///
-    ///     fn run_handler<H>(self, handler: H) where H: EventHandler<Event=Self::Event> {     
-    ///
-    ///         let disconnect_sender = self.listener.disconnect_sender();
-    ///         let message_receiver = self.listener.message_receiver(); // <---
-    ///
-    ///         loop {
-    ///             if let Err(_) = message_receiver.recv() {
-    ///                  disconnect_sender.acknowledge_disconnection().unwrap();
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    /// ```
-    pub fn message_receiver(&self) -> &EventReceiver<Event> {
-        &self.message_receiver
-    }
-
-    /// If you use `ChannelEventListener` by wrapping it, instead of using it directly,
-    /// for example if you want to write your own `EventListener` implementation,
-    /// you will need this `&DisconnectSender` to acknowledge when a reporter disconnects.
-    ///
-    /// ### Example
-    ///
-    /// **NB:** This example should **not*** be used on its own! It does not contain a fully working listener!
-    /// See [`crate::EventListener`] on how to implement your own listener instead.
-    ///
-    /// ```no_run
-    /// // NB: This example is incomplete!
-    /// //     It does not contain a fully working listener!
-    ///
-    /// use storyteller::{ChannelEventListener, EventHandler, EventListener};
-    ///
-    /// struct MyEvent;
-    ///
-    /// struct WrappingListener {
-    ///     listener: ChannelEventListener<MyEvent>,
-    /// }
-    ///
-    /// impl EventListener for WrappingListener {
-    ///     type Event = MyEvent;
-    ///
-    ///     fn run_handler<H>(self, handler: H) where H: EventHandler<Event=Self::Event> {     
-    ///
-    ///         let disconnect_sender = self.listener.disconnect_sender(); // <---
-    ///         let message_receiver = self.listener.message_receiver();
-    ///
-    ///         loop {
-    ///             if let Err(_) = message_receiver.recv() {
-    ///                  disconnect_sender.acknowledge_disconnection().unwrap();
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    /// ```
-    pub fn disconnect_sender(&self) -> &DisconnectSender {
-        &self.disconnect_sender
+    /// [`event_channel()`]: crate::event_channel
+    pub fn new(event_receiver: EventReceiver<Event>) -> Self {
+        Self { event_receiver }
     }
 }
 
@@ -116,32 +36,68 @@ where
     Event: Send + 'static,
 {
     type Event = Event;
+    type FinishProcessingHandle = ChannelFinalizeHandler;
 
-    fn run_handler<H>(self, handler: H)
+    fn run_handler<H>(&self, handler: H) -> Self::FinishProcessingHandle
     where
-        H: EventHandler<Event = Self::Event>,
+        H: EventHandler<Event = Self::Event> + 'static,
     {
-        thread::spawn(move || {
-            let disconnect_sender = self.disconnect_sender();
-            let message_receiver = self.message_receiver();
+        let event_receiver = self.event_receiver.clone();
 
-            loop {
-                match message_receiver.recv() {
+        let handle = thread::spawn(move || {
+            //
+            'evl: loop {
+                match event_receiver.recv() {
                     Ok(message) => handler.handle(message),
                     Err(_disconnect) => {
                         handler.finish();
-
-                        let _ack = disconnect_sender.acknowledge_disconnection();
-
-                        #[cfg(not(feature = "experimental_handle_disconnect_ack"))]
-                        {
-                            _ack.expect("Failed to send disconnect acknowledgement!");
-                        }
-
-                        break;
+                        break 'evl;
                     }
                 }
             }
         });
+
+        ChannelFinalizeHandler::new(handle)
+    }
+}
+
+/// A [`FinishProcessing`] implementation for the [`ChannelEventListener`].
+/// Used to wait for the [`EventHandler`] ran by the `listener` to finish processing
+/// events.
+///
+/// ### Caution: Infinite looping
+///
+/// Calling [`FinishProcessing::finish_processing`] without first disconnecting
+/// the sender channel of the reporter will cause the program to be stuck in an infinite
+/// loop.
+///
+/// The reason for this is that disconnecting the channel causes the loop to process
+/// a disconnect event, where we break out of the loop. If this disconnect does not
+/// happen, the thread processing events will not be finished, and
+/// [`FinishProcessing::finish_processing`] will block, since it waits for the thread
+/// to be finished.
+///
+/// To disconnect the sender channel of the reporter, call [`ChannelReporter::disconnect`].
+///
+/// [`FinishProcessing`]: crate::FinishProcessing
+/// [`EventHandler`]: crate::EventHandler
+/// [`ChannelEventListener`]: crate::ChannelEventListener
+/// [`ChannelReporter::disconnect`]: crate::ChannelReporter::disconnect
+#[must_use]
+pub struct ChannelFinalizeHandler {
+    handle: JoinHandle<()>,
+}
+
+impl ChannelFinalizeHandler {
+    fn new(handle: JoinHandle<()>) -> Self {
+        Self { handle }
+    }
+}
+
+impl FinishProcessing for ChannelFinalizeHandler {
+    type Err = ();
+
+    fn finish_processing(self) -> Result<(), Self::Err> {
+        self.handle.join().map_err(|_| ())
     }
 }

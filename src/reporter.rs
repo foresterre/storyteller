@@ -1,5 +1,3 @@
-use crate::message::Disconnect;
-
 /// A reporter (a type of transmitter) which sends events (the message to be transmitted) to
 /// a listener (a type of receiver).
 pub trait Reporter {
@@ -12,10 +10,8 @@ pub trait Reporter {
     /// Send an event to listeners.
     fn report_event(&self, event: impl Into<Self::Event>) -> Result<(), Self::Err>;
 
-    /// Request to be disconnected.
+    /// Disconnect the reporter from the [`EventListener`].
     ///
-    /// Rendezvous with the listener, allowing it to finish its queue of messages.
-    /// The [`crate::Disconnect`] message will be send by the listener as a
-    /// disconnection acknowledgement.
-    fn disconnect(self) -> Result<Disconnect, Self::Err>;
+    /// [`EventListener`]: crate::EventListener
+    fn disconnect(self) -> Result<(), Self::Err>;
 }

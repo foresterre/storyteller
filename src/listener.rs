@@ -11,52 +11,6 @@ use crate::EventHandler;
 /// The listener should not block (you can, for example, spawn a thread to which you can communicate
 /// using a channel).
 ///
-/// ### Example
-///
-/// ```
-/// use storyteller::{EventHandler, EventListener};
-///
-/// struct MyEvent;
-///
-/// struct WrappingListener<L: EventListener<Event = MyEvent>> {
-///     listener: L,
-/// }
-///
-/// impl<L: EventListener<Event = MyEvent>> EventListener for WrappingListener<L> {
-///     type Event = MyEvent;
-///
-///     fn run_handler<H>(self, handler: H) where H: EventHandler<Event=Self::Event> {
-///         // For this example, we delegate the implementation to the wrapped listener...
-///         self.listener.run_handler(handler);
-///         
-///         // Usually you would instead spawn a thread here, to prevent the listener from blocking
-///         // your main flow.
-///
-///         // Within the thread you can then handle the messages, e.g. in a loop.
-///         
-///         // For example, if we would have wrapped a ChannelListener instead:
-///         
-///         // ```rust
-///         //      std::thread::spawn(move || {
-///         //             let disconnect_sender = self.listener.disconnect_sender();
-///         //             let message_receiver = self.listener.message_receiver();
-///         //
-///         //             loop {
-///         //                 match message_receiver.recv() {
-///         //                     Ok(message) => handler.handle(message),
-///         //                     Err(_disconnect) => {
-///         //                         handler.finish();
-///         //                         disconnect_sender.acknowledge_disconnection().unwrap();
-///         //                         break;
-///         //                     }
-///         //                 }
-///         //             }
-///         //         });
-///         // ```
-///     }
-/// }
-/// ```
-///
 /// [`Reporter`]: crate::Reporter
 /// [`EventHandler`]: crate::EventHandler
 /// [`ChannelEventListener`]: crate::ChannelEventListener
@@ -65,7 +19,37 @@ pub trait EventListener {
     /// The type of message send from a reporter to some listener.
     type Event;
 
-    fn run_handler<H>(self, handler: H)
+    /// Can be used to stop running the event handler.
+    type FinishProcessingHandle: FinishProcessing;
+
+    fn run_handler<H>(&self, handler: H) -> Self::FinishProcessingHandle
     where
-        H: EventHandler<Event = Self::Event>;
+        H: EventHandler<Event = Self::Event> + 'static;
+}
+
+/// Provides a way for to wait for [`EventListener`] instances to let their [`EventHandler`] instances
+/// finish up on processing their received events.
+///
+/// ### Caution: Infinite looping
+///
+/// If the [`EventListener`] runs the handler in a loop,
+/// then calling the [`FinishProcessing::finish_processing`]
+/// method may cause an infinite loop if it does not contain a way to break out of
+/// this loop. Usually, the [`Reporter::disconnect`] method should provide a way to break
+/// out of the loop.
+///
+/// [`EventListener`]: crate::EventListener
+/// [`EventHandler`]: crate::EventHandler
+/// [`FinishProcessing::finish_processing`]: crate::FinishProcessing::finish_processing
+/// [`Reporter::disconnect`]: crate::Reporter::disconnect
+#[must_use]
+pub trait FinishProcessing {
+    type Err;
+
+    /// Finish up processing of received events.
+    ///
+    /// See [`FinishProcessing`] for more.
+    ///
+    /// [`FinishProcessing`]: crate::FinishProcessing
+    fn finish_processing(self) -> Result<(), Self::Err>;
 }
