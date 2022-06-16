@@ -1,38 +1,34 @@
-use crate::{Disconnect, DisconnectReceiver, EventSender, Reporter};
+use crate::{EventSender, Reporter};
+use std::fmt::{Debug, Formatter};
 
 /// A specialized type of reporter which uses a channel to transmit messages.
 ///
-/// Use [`Reporter::disconnect`] to keep the channels alive until a disconnect has been requested.
-/// Otherwise, the reporter hang up after the regular program flow is finished, and events are sent,
-/// which may be before all events have been handled in our separate thread.
+/// Use [`Reporter::disconnect`] to disconnect the channel by dropping the `sender`.
+/// If you want to finish up processing unprocessed events, you may do so by calling
+/// the blocking [`FinishProcessing::finish_processing`].
 ///
-/// The channels required to create an instance can be created by calling the [`crate::event_channel`]
-/// and [`crate::disconnect_channel`] functions.
+/// The channel sender (and channel receiver for the `listener`), required to create a
+/// `ChannelReporter` instance can be created by calling the [`event_channel()`]
+/// function.
 ///
-/// The [`crate::EventListener`] associated with this reporter is the [`crate::ChannelEventListener`].
+/// The [`EventListener`] associated with this reporter is the [`ChannelEventListener`].
+///
+/// [`Reporter::disconnect`]: crate::Reporter::disconnect
+/// [`FinishProcessing::finish_processing`]: crate::FinishProcessing::finish_processing
+/// [`event_channel()`]: crate::event_channel()
+/// [`EventListener`]: crate::EventListener
+/// [`ChannelEventListener`]: crate::ChannelEventListener
 pub struct ChannelReporter<Event> {
-    message_sender: EventSender<Event>,
-    disconnect_receiver: DisconnectReceiver,
+    event_sender: EventSender<Event>,
 }
 
 impl<Event> ChannelReporter<Event> {
-    /// Setup a reporter which uses two channels:
-    /// 1. the `message_sender` channel sends events to listeners.
-    /// 2. the `disconnect_receiver` which is practically a oneshot channel which receives one
-    ///    message upon successful disconnection.
+    /// Setup a reporter which uses a channel.
     ///
-    /// The channels required to create an instance can be created by calling the [`crate::event_channel`]
-    /// and [`crate::disconnect_channel`] functions.
-    ///
-    /// NB: Make sure you take care of the scope of the sender and receiver.
-    pub fn new(
-        message_sender: EventSender<Event>,
-        disconnect_receiver: DisconnectReceiver,
-    ) -> Self {
-        Self {
-            message_sender,
-            disconnect_receiver,
-        }
+    /// The channel required to create an instance can be created by calling the [`crate::event_channel`]
+    /// function.
+    pub fn new(event_sender: EventSender<Event>) -> Self {
+        Self { event_sender }
     }
 }
 
@@ -41,28 +37,28 @@ impl<Event> Reporter for ChannelReporter<Event> {
     type Err = ReporterError<Event>;
 
     fn report_event(&self, event: impl Into<Self::Event>) -> Result<(), Self::Err> {
-        self.message_sender
+        self.event_sender
             .send(event.into())
             .map_err(ReporterError::SendError)
     }
 
-    /// Disconnect the sender, and wait for a response from the listener.
-    ///
-    /// Allows the program to wait for the listener to finish up queued events.
-    fn disconnect(self) -> Result<Disconnect, Self::Err> {
-        // close the channel
-        //
-        // `message_receiver.recv()` will receive an `Err(RecvError)`
-        drop(self.message_sender);
-
-        self.disconnect_receiver
-            .recv()
-            .map_err(ReporterError::DisconnectError)
+    /// Disconnect the sender.
+    fn disconnect(self) -> Result<(), Self::Err> {
+        Ok(self.event_sender.disconnect())
     }
 }
 
-#[derive(Debug)]
 pub enum ReporterError<Event> {
     SendError(crate::EventSendError<Event>),
-    DisconnectError(crate::DisconnectRecvError),
+}
+
+impl<Event> Debug for ReporterError<Event> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SendError(_) => f.write_fmt(format_args!(
+                "SendError(EventSendError({}))",
+                std::any::type_name::<Event>()
+            )),
+        }
+    }
 }

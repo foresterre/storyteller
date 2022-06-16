@@ -29,7 +29,6 @@
 
 mod handler;
 mod listener;
-mod message;
 mod reporter;
 #[cfg(test)]
 mod tests;
@@ -39,12 +38,10 @@ mod channel_reporter;
 
 #[cfg(feature = "channel_reporter")]
 pub use channel_reporter::{
-    channel::disconnect_channel, channel::event_channel, channel::DisconnectReceiver,
-    channel::DisconnectRecvError, channel::DisconnectSender, channel::EventReceiver,
-    channel::EventSendError, channel::EventSender, listener::ChannelEventListener,
-    reporter::ChannelReporter, reporter::ReporterError,
+    channel::event_channel, channel::EventReceiver, channel::EventSendError, channel::EventSender,
+    listener::ChannelEventListener, listener::ChannelFinalizeHandler, reporter::ChannelReporter,
+    reporter::ReporterError,
 };
 pub use handler::EventHandler;
-pub use listener::EventListener;
-pub use message::Disconnect;
+pub use listener::{EventListener, FinishProcessing};
 pub use reporter::Reporter;

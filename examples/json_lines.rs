@@ -2,17 +2,13 @@ use std::io::{Stderr, Write};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{io, thread};
-use storyteller::EventHandler;
+use storyteller::{EventHandler, FinishProcessing};
 
-use storyteller::{
-    disconnect_channel, event_channel, ChannelEventListener, ChannelReporter, EventListener,
-    Reporter,
-};
+use storyteller::{event_channel, ChannelEventListener, ChannelReporter, EventListener, Reporter};
 
 // See the test function `bar` in src/tests.rs for an example where the handler is a progress bar.
 fn main() {
     let (sender, receiver) = event_channel::<ExampleEvent>();
-    let (disconnect_sender, disconnect_receiver) = disconnect_channel();
 
     // Handlers are implemented by you. Here you find one which writes jsonlines messages to stderr.
     // This can be anything, for example a progress bar (see src/tests.rs for an example of this),
@@ -21,17 +17,17 @@ fn main() {
     let handler = JsonHandler::default();
 
     // This one is included with the library. It just needs to be hooked up with a channel.
-    let reporter = ChannelReporter::new(sender, disconnect_receiver);
+    let reporter = ChannelReporter::new(sender);
 
     // This one is also included with the library. It also needs to be hooked up with a channel.
-    let listener = ChannelEventListener::new(receiver, disconnect_sender);
+    let listener = ChannelEventListener::new(receiver);
 
     // Here we use the jsonlines handler we defined above, in combination with the default `EventListener`
     // implementation on the `ChannelEventListener` we used above.
     //
     // If we don't run the handler, we'll end up in an infinite loop, because our `reporter.disconnect()`
     // below will block until it receives a Disconnect message.
-    listener.run_handler(handler);
+    let fin = listener.run_handler(handler);
 
     #[allow(unused_must_use)]
     // sending events can fail, but we'll assume they won't for this example
@@ -55,7 +51,12 @@ fn main() {
         reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
     }
 
+    // Within the ChannelReporter, the sender is dropped, thereby disconnecting the channel
+    // Already sent events can still be processed.
     let _ = reporter.disconnect();
+
+    // To keep the processing of already sent events alive, we block the handler
+    let _ = fin.finish_processing();
 }
 
 // ------- Events + Disconnect

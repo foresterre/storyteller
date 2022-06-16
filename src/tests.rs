@@ -3,14 +3,11 @@
 
 // TODO: now we have a working proof of concept, and are starting to refine the library,
 //  we also should start testing it properly! ^^
-
-// TODO: implement a FakeHandler, like in cargo-msrv and use it to test whether certain events happened
-
 // TODO: test a MultiHandler like the one in rust-experiment-air3
 
 use crate::{
-    disconnect_channel, event_channel, ChannelEventListener, ChannelReporter, EventHandler,
-    EventListener, Reporter,
+    event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
+    FinishProcessing, Reporter,
 };
 use serde::Serialize;
 use std::io::{Stderr, Write};
@@ -117,13 +114,12 @@ impl EventHandler for JsonHandler {
 #[test]
 fn bar() {
     let (sender, receiver) = event_channel::<ExampleEvent>();
-    let (disconnect_sender, disconnect_receiver) = disconnect_channel();
 
     let handler = IndicatifHandler::default();
-    let reporter = ChannelReporter::new(sender, disconnect_receiver);
-    let listener = ChannelEventListener::new(receiver, disconnect_sender);
+    let reporter = ChannelReporter::new(sender);
+    let listener = ChannelEventListener::new(receiver);
 
-    listener.run_handler(handler);
+    let finalize_handle = listener.run_handler(handler);
 
     reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
@@ -143,21 +139,19 @@ fn bar() {
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
     reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
 
-    // if we didn't call disconnect here, the program would exit before it would be allowed to handle
-    // all messages.
-    reporter.disconnect();
+    reporter.disconnect().unwrap();
+    finalize_handle.finish_processing().unwrap();
 }
 
 #[test]
 fn json() {
     let (sender, receiver) = event_channel::<ExampleEvent>();
-    let (disconnect_sender, disconnect_receiver) = disconnect_channel();
 
     let handler = JsonHandler::default();
-    let reporter = ChannelReporter::new(sender, disconnect_receiver);
-    let listener = ChannelEventListener::new(receiver, disconnect_sender);
+    let reporter = ChannelReporter::new(sender);
+    let listener = ChannelEventListener::new(receiver);
 
-    listener.run_handler(handler);
+    let finalize_handle = listener.run_handler(handler);
 
     reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
@@ -177,5 +171,6 @@ fn json() {
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
     reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
 
-    reporter.disconnect();
+    reporter.disconnect().unwrap();
+    finalize_handle.finish_processing().unwrap();
 }
