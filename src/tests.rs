@@ -1,9 +1,10 @@
+#![cfg(feature = "channel_reporter")]
 #![allow(unused_must_use)]
 
 // TODO: now we have a working proof of concept, and are starting to refine the library,
 //  we also should start testing it properly! ^^
 
-// TODO: implenent a FakeHandler, like in cargo-msrv and use it to test whether certain events happened
+// TODO: implement a FakeHandler, like in cargo-msrv and use it to test whether certain events happened
 
 // TODO: test a MultiHandler like the one in rust-experiment-air3
 

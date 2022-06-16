@@ -58,6 +58,12 @@ jobs:
       - name: build
         run: cargo build --verbose
 
-      - name: test
+      - name: test_default_features
         run: cargo test --verbose
+
+      - name: test_no_default_features
+        run: cargo test --no-default-features --verbose
+
+      - name: test_all_features
+        run: cargo test --all-features --verbose
 
