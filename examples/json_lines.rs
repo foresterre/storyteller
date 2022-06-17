@@ -27,28 +27,28 @@ fn main() {
     //
     // If we don't run the handler, we'll end up in an infinite loop, because our `reporter.disconnect()`
     // below will block until it receives a Disconnect message.
-    let fin = listener.run_handler(handler);
+    let fin = listener.run_handler(Arc::new(handler));
 
     #[allow(unused_must_use)]
     // sending events can fail, but we'll assume they won't for this example
     {
-        reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
+        reporter.report_event(ExampleEvent::text("[status] One"));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
-        reporter.report_event(ExampleEvent::text("[status::before]\tTwo before reset"));
+        reporter.report_event(ExampleEvent::text("[status::before] Two before reset"));
         reporter.report_event(ExampleEvent::event(MyEvent::Reset));
-        reporter.report_event(ExampleEvent::text("[status::after]\t\tTwo after reset"));
+        reporter.report_event(ExampleEvent::text("[status::after] Two after reset"));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
-        reporter.report_event(ExampleEvent::text("[status]\t\tThree"));
+        reporter.report_event(ExampleEvent::text("[status] Three"));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
         reporter.report_event(ExampleEvent::event(MyEvent::Increment));
-        reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
+        reporter.report_event(ExampleEvent::text("[status] Four"));
     }
 
     // Within the ChannelReporter, the sender is dropped, thereby disconnecting the channel
