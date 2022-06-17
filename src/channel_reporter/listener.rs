@@ -1,5 +1,6 @@
 use crate::listener::FinishProcessing;
 use crate::{EventHandler, EventListener, EventReceiver};
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -38,7 +39,7 @@ where
     type Event = Event;
     type FinishProcessingHandle = ChannelFinalizeHandler;
 
-    fn run_handler<H>(&self, handler: H) -> Self::FinishProcessingHandle
+    fn run_handler<H>(&self, handler: Arc<H>) -> Self::FinishProcessingHandle
     where
         H: EventHandler<Event = Self::Event> + 'static,
     {

@@ -119,7 +119,7 @@ fn bar() {
     let reporter = ChannelReporter::new(sender);
     let listener = ChannelEventListener::new(receiver);
 
-    let finalize_handle = listener.run_handler(handler);
+    let finalize_handle = listener.run_handler(Arc::new(handler));
 
     reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
@@ -151,7 +151,7 @@ fn json() {
     let reporter = ChannelReporter::new(sender);
     let listener = ChannelEventListener::new(receiver);
 
-    let finalize_handle = listener.run_handler(handler);
+    let finalize_handle = listener.run_handler(Arc::new(handler));
 
     reporter.report_event(ExampleEvent::text("[status]\t\tOne"));
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));

@@ -3,6 +3,7 @@
 extern crate core;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
     FinishProcessing, Reporter,
@@ -73,7 +74,7 @@ fn test() {
         MyEvent(4),
     ]);
 
-    let fin = listener.run_handler(handler);
+    let fin = listener.run_handler(Arc::new(handler));
 
     for i in 0..5 {
         reporter.report_event(MyEvent(i)).unwrap();
@@ -97,7 +98,7 @@ fn expect_failure(expected_events: Vec<MyEvent>) {
 
     let handler = CollectingHandler::new(expected_events);
 
-    let fin = listener.run_handler(handler);
+    let fin = listener.run_handler(Arc::new(handler));
 
     for i in 0..5 {
         reporter.report_event(MyEvent(i)).unwrap();

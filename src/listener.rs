@@ -1,4 +1,5 @@
 use crate::EventHandler;
+use std::sync::Arc;
 
 /// A listener, which listens to events from a [`Reporter`],
 /// and can act upon these events by using an [`EventHandler`].
@@ -22,7 +23,7 @@ pub trait EventListener {
     /// Can be used to stop running the event handler.
     type FinishProcessingHandle: FinishProcessing;
 
-    fn run_handler<H>(&self, handler: H) -> Self::FinishProcessingHandle
+    fn run_handler<H>(&self, handler: Arc<H>) -> Self::FinishProcessingHandle
     where
         H: EventHandler<Event = Self::Event> + 'static;
 }
