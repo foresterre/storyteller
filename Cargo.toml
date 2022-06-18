@@ -29,10 +29,26 @@ indicatif = "0.16.2"
 # parameterized tests
 yare = "1.0.1"
 
+# --- Examples
+
 [[example]]
 name = "json_lines"
 required-features = ["channel_reporter"]
 
 [[example]]
 name = "readme"
+required-features = ["channel_reporter"]
+
+# --- Integration tests
+
+[[test]]
+name = "collecting_handler"
+required-features = ["channel_reporter"]
+
+[[test]]
+name = "multi_handler"
+required-features = ["channel_reporter"]
+
+[[test]]
+name = "registering_handler"
 required-features = ["channel_reporter"]
