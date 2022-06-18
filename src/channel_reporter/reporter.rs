@@ -1,5 +1,6 @@
 use crate::{EventSender, Reporter};
-use std::fmt::{Debug, Formatter};
+use std::error;
+use std::fmt::{Debug, Display, Formatter};
 
 /// A specialized type of reporter which uses a channel to transmit messages.
 ///
@@ -43,6 +44,7 @@ impl<Event> Reporter for ChannelReporter<Event> {
     }
 
     /// Disconnect the sender.
+    #[allow(clippy::unit_arg)]
     fn disconnect(self) -> Result<(), Self::Err> {
         Ok(self.event_sender.disconnect())
     }
@@ -62,3 +64,20 @@ impl<Event> Debug for ReporterError<Event> {
         }
     }
 }
+
+impl<Event> Display for ReporterError<Event>
+where
+    Event: Display,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SendError(crate::EventSendError(ev)) => f.write_fmt(format_args!(
+                "SendError(EventSendError({} = '{}'))",
+                std::any::type_name::<Event>(),
+                ev
+            )),
+        }
+    }
+}
+
+impl<Event> error::Error for ReporterError<Event> where Event: Display {}
