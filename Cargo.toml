@@ -32,3 +32,7 @@ yare = "1.0.1"
 [[example]]
 name = "json_lines"
 required-features = ["channel_reporter"]
+
+[[example]]
+name = "readme"
+required-features = ["channel_reporter"]
