@@ -44,6 +44,7 @@ impl<Event> Reporter for ChannelReporter<Event> {
     }
 
     /// Disconnect the sender.
+    #[allow(clippy::unit_arg)]
     fn disconnect(self) -> Result<(), Self::Err> {
         Ok(self.event_sender.disconnect())
     }
