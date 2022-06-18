@@ -8,10 +8,10 @@ description = "Library focused on supporting user oriented output while supporti
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/foresterre/storyteller"
 
+exclude = ["/.github", "docs/sketches/*.png"]
+
 [package.metadata]
 msrv = "1.38"
-
-exclude = ["/.github", "docs/sketches/*.png"]
 
 [features]
 default = ["channel_reporter"]
