@@ -1,5 +1,4 @@
 // A sample implementation which collects the events it receives
-#![cfg(feature = "channel_reporter")]
 extern crate core;
 
 use std::marker::PhantomData;
