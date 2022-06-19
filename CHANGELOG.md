@@ -2,7 +2,15 @@
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.6.1...HEAD
+
+## [0.6.1] - 2022-06-19
+
+### Fixed
+
+* Fix excessive packaged crate size 
+
+[0.6.1]: https://github.com/foresterre/bisector/compare/v0.6.0...v0.6.1
 
 ## [0.6.0] - 2022-06-17
 
