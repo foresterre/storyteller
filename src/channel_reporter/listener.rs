@@ -10,11 +10,11 @@ use std::thread::JoinHandle;
 /// The channel based receiver required to create an instance can be created by calling the
 /// [`event_channel()`] function.
 ///
-/// The [`Reporter`] associated with this event listener is the [`ChannelReporter`].
+/// The [`EventReporter`] associated with this event listener is the [`ChannelReporter`].
 ///
 /// [`ChannelEventListener::run_handler`]: crate::ChannelEventListener::run_handler
 /// [`event_channel()`]: crate::event_channel
-/// [`Reporter`]: crate::Reporter
+/// [`EventReporter`]: crate::EventReporter
 /// [`ChannelReporter`]: crate::ChannelReporter
 pub struct ChannelEventListener<Event> {
     event_receiver: EventReceiver<Event>,
@@ -78,12 +78,12 @@ where
 /// [`FinishProcessing::finish_processing`] will block, since it waits for the thread
 /// to be finished.
 ///
-/// To disconnect the sender channel of the reporter, call [`ChannelReporter::disconnect`].
+/// To disconnect the sender channel of the reporter, call [`disconnect`].
 ///
 /// [`FinishProcessing`]: crate::FinishProcessing
 /// [`EventHandler`]: crate::EventHandler
 /// [`ChannelEventListener`]: crate::ChannelEventListener
-/// [`ChannelReporter::disconnect`]: crate::ChannelReporter::disconnect
+/// [`disconnect`]: crate::EventReporter::disconnect
 #[must_use]
 pub struct ChannelFinalizeHandler {
     handle: JoinHandle<()>,

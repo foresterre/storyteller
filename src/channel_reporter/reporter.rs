@@ -1,10 +1,10 @@
-use crate::{EventSender, Reporter};
+use crate::{EventReporter, EventSender};
 use std::error;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A specialized type of reporter which uses a channel to transmit messages.
 ///
-/// Use [`Reporter::disconnect`] to disconnect the channel by dropping the `sender`.
+/// Use [`EventReporter::disconnect`] to disconnect the channel by dropping the `sender`.
 /// If you want to finish up processing unprocessed events, you may do so by calling
 /// the blocking [`FinishProcessing::finish_processing`].
 ///
@@ -14,7 +14,7 @@ use std::fmt::{Debug, Display, Formatter};
 ///
 /// The [`EventListener`] associated with this reporter is the [`ChannelEventListener`].
 ///
-/// [`Reporter::disconnect`]: crate::Reporter::disconnect
+/// [`EventReporter::disconnect`]: crate::EventReporter::disconnect
 /// [`FinishProcessing::finish_processing`]: crate::FinishProcessing::finish_processing
 /// [`event_channel()`]: crate::event_channel()
 /// [`EventListener`]: crate::EventListener
@@ -33,14 +33,14 @@ impl<Event> ChannelReporter<Event> {
     }
 }
 
-impl<Event> Reporter for ChannelReporter<Event> {
+impl<Event> EventReporter for ChannelReporter<Event> {
     type Event = Event;
-    type Err = ReporterError<Event>;
+    type Err = EventReporterError<Event>;
 
     fn report_event(&self, event: impl Into<Self::Event>) -> Result<(), Self::Err> {
         self.event_sender
             .send(event.into())
-            .map_err(ReporterError::SendError)
+            .map_err(EventReporterError::SendError)
     }
 
     /// Disconnect the sender.
@@ -50,11 +50,11 @@ impl<Event> Reporter for ChannelReporter<Event> {
     }
 }
 
-pub enum ReporterError<Event> {
+pub enum EventReporterError<Event> {
     SendError(crate::EventSendError<Event>),
 }
 
-impl<Event> Debug for ReporterError<Event> {
+impl<Event> Debug for EventReporterError<Event> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::SendError(_) => f.write_fmt(format_args!(
@@ -65,7 +65,7 @@ impl<Event> Debug for ReporterError<Event> {
     }
 }
 
-impl<Event> Display for ReporterError<Event>
+impl<Event> Display for EventReporterError<Event>
 where
     Event: Display,
 {
@@ -80,4 +80,4 @@ where
     }
 }
 
-impl<Event> error::Error for ReporterError<Event> where Event: Display {}
+impl<Event> error::Error for EventReporterError<Event> where Event: Display {}

@@ -4,6 +4,10 @@
 
 [Unreleased]: https://github.com/foresterre/storyteller/compare/v0.6.1...HEAD
 
+### Changed
+
+* ⚠ Rename `Reporter` and `ReporterError` to `EventReporter` and `EventReporterError` respectively
+
 ## [0.6.1] - 2022-06-19
 
 ### Fixed
