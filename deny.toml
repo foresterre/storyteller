@@ -5,6 +5,7 @@ confidence-threshold = 0.925
 allow = [
     "Apache-2.0",
     "MIT",
+    "Unicode-DFS-2016",
 ]
 
 [advisories]
