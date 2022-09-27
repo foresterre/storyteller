@@ -1,6 +1,6 @@
 /// A reporter (a type of transmitter) which sends events (the message to be transmitted) to
 /// a listener (a type of receiver).
-pub trait Reporter {
+pub trait EventReporter {
     /// The type of message send from a reporter to some listener.
     type Event;
 

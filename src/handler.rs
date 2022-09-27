@@ -3,10 +3,10 @@
 /// consists of a `Vec<Box<dyn EventHandler>>` and executes multiple handlers under the hood.
 pub trait EventHandler: Send + Sync {
     /// The type of event to be handled.
-    /// Usually the same type as you would send from a [`Reporter`] to [`Listener`].
+    /// Usually the same type as you would send from a [`EventReporter`] to [`EventListener`].
     ///
-    /// [`Reporter`]: crate::Reporter
-    /// [`Listener`]: crate::EventListener
+    /// [`EventReporter`]: crate::EventReporter
+    /// [`EventListener`]: crate::EventListener
     type Event;
 
     /// Act upon some received event.

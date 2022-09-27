@@ -12,7 +12,7 @@
 //!     which may be asserted on in software tests, or a handler which sends websocket messages
 //!     for each event.
 //!     
-//! * [`Reporter`]: Used to communicate messages to a user.
+//! * [`EventReporter`]: Used to communicate messages to a user.
 //! * [`EventListener`]: Receives the messages, send by a reporter and runs the `EventHandler`
 //!     where appropriate.
 //!
@@ -22,7 +22,7 @@
 //! and the [`ChannelEventListener`].
 //!
 //! [`EventHandler`]: crate::EventHandler
-//! [`Reporter`]: crate::Reporter
+//! [`EventReporter`]: crate::EventReporter
 //! [`EventListener`]: `crate::EventListener`
 //! [`ChannelReporter`]: crate::ChannelReporter
 //! [`ChannelEventListener`]: crate::ChannelEventListener
@@ -40,8 +40,8 @@ mod channel_reporter;
 pub use channel_reporter::{
     channel::event_channel, channel::EventReceiver, channel::EventSendError, channel::EventSender,
     listener::ChannelEventListener, listener::ChannelFinalizeHandler, reporter::ChannelReporter,
-    reporter::ReporterError,
+    reporter::EventReporterError,
 };
 pub use handler::EventHandler;
 pub use listener::{EventListener, FinishProcessing};
-pub use reporter::Reporter;
+pub use reporter::EventReporter;

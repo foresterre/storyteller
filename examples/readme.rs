@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::{io, thread};
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    FinishProcessing, Reporter,
+    EventReporter, FinishProcessing,
 };
 
 // --- In the main function, we'll instantiate a Reporter, a Listener, and an EventHandler.

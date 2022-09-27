@@ -7,7 +7,7 @@
 
 use crate::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    FinishProcessing, Reporter,
+    EventReporter, FinishProcessing,
 };
 use serde::Serialize;
 use std::io::{Stderr, Write};
