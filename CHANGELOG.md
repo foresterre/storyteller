@@ -2,8 +2,15 @@
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.8.0...HEAD
 
+## [0.8.0] - 2022-09-28
+
+### Changed
+
+* `storyteller` MSRV is now 1.56
+
+[0.8.0]: https://github.com/foresterre/storyteller/compare/v0.7.0...v0.8.0
 
 ## [0.7.0] - 2022-09-27
 
