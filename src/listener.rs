@@ -1,7 +1,7 @@
 use crate::EventHandler;
 use std::sync::Arc;
 
-/// A listener, which listens to events from a [`Reporter`],
+/// A listener, which listens to events from a [`EventReporter`],
 /// and can act upon these events by using an [`EventHandler`].
 ///
 /// You may use the included [`ChannelEventListener`] in combination with the
@@ -12,7 +12,7 @@ use std::sync::Arc;
 /// The listener should not block (you can, for example, spawn a thread to which you can communicate
 /// using a channel).
 ///
-/// [`Reporter`]: crate::Reporter
+/// [`EventReporter`]: crate::EventReporter
 /// [`EventHandler`]: crate::EventHandler
 /// [`ChannelEventListener`]: crate::ChannelEventListener
 /// [`ChannelReporter`]: crate::ChannelReporter
@@ -36,13 +36,13 @@ pub trait EventListener {
 /// If the [`EventListener`] runs the handler in a loop,
 /// then calling the [`FinishProcessing::finish_processing`]
 /// method may cause an infinite loop if it does not contain a way to break out of
-/// this loop. Usually, the [`Reporter::disconnect`] method should provide a way to break
+/// this loop. Usually, the [`EventReporter::disconnect`] method should provide a way to break
 /// out of the loop.
 ///
 /// [`EventListener`]: crate::EventListener
 /// [`EventHandler`]: crate::EventHandler
 /// [`FinishProcessing::finish_processing`]: crate::FinishProcessing::finish_processing
-/// [`Reporter::disconnect`]: crate::Reporter::disconnect
+/// [`EventReporter::disconnect`]: crate::EventReporter::disconnect
 #[must_use]
 pub trait FinishProcessing {
     type Err;

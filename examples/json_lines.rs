@@ -4,7 +4,9 @@ use std::time::Duration;
 use std::{io, thread};
 use storyteller::{EventHandler, FinishProcessing};
 
-use storyteller::{event_channel, ChannelEventListener, ChannelReporter, EventListener, Reporter};
+use storyteller::{
+    event_channel, ChannelEventListener, ChannelReporter, EventListener, EventReporter,
+};
 
 // See the test function `bar` in src/tests.rs for an example where the handler is a progress bar.
 fn main() {

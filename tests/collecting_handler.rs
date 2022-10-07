@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    FinishProcessing, Reporter,
+    EventReporter, FinishProcessing,
 };
 
 #[derive(Debug, Eq, PartialEq)]

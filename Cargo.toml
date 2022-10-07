@@ -1,6 +1,6 @@
 [package]
 name = "storyteller"
-version = "0.6.1"
+version = "0.8.0"
 edition = "2018"
 
 authors = ["Martijn Gribnau <garm@ilumeo.com>"]
@@ -9,9 +9,7 @@ license = "Apache-2.0 OR MIT"
 repository = "https://github.com/foresterre/storyteller"
 
 exclude = ["/.github", "docs/sketches/*.png"]
-
-[package.metadata]
-msrv = "1.38"
+rust-version = "1.56"
 
 [features]
 default = ["channel_reporter"]
