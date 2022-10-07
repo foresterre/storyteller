@@ -5,7 +5,9 @@ _A library for working with user output_
 
 * 👋 [Introduction](#introduction)
 * 🖼 [Visualized introduction](#visualized-introduction)
-* 📄 [Example source code](#example)
+* 📄 [Examples](#examples)
+  * [Real world usage](#real-world-example)
+  * [Hello world example](#hello-world-example)
 * ❓ [Origins](#origins)
 * 💖 [Contributions & Feedback](#contributions)
 * 🧾 [License](#license)
@@ -46,7 +48,13 @@ Click [here](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/
 ![visualized introduction sketch](docs/sketches/introduction_dark.png)
 ([light svg](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction.svg), [dark svg](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction_dark.svg), [light png](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction.png), [dark png](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/sketches/introduction_dark.png))
 
-## Example
+## Examples
+
+### Real-world Example
+
+Storyteller is used by [cargo-msrv](https://github.com/foresterre/cargo-msrv/tree/44444c55608edb749c3cbcd5b6983d7f8846b452/src/reporter) since `v0.16`. To preview how events are specified, you could click around in its [event](https://github.com/foresterre/cargo-msrv/tree/44444c55608edb749c3cbcd5b6983d7f8846b452/src/reporter/event) module. In the [handler](https://github.com/foresterre/cargo-msrv/tree/44444c55608edb749c3cbcd5b6983d7f8846b452/src/reporter/handler) module, several handlers can be found, such as one which writes JSON, one which prints pretty human readable output, one which prints minimal final result output used by shell commands, one which discards output and one which is used for integration testing.
+
+### Hello world Example
 
 ```rust
 use std::error::Error;
