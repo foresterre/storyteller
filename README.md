@@ -29,7 +29,7 @@ The three building blocks are:
 	* A handler which sends websocket messages for each event
 	* A handler which updates a user interface
     
-* `Reporter`: Called during your program logic. 
+* `EventReporter`: Called during your program logic. 
 	Used to communicate user output to a user. The reporter is invoked with an Event during the programs logic, so you don't have to deal with formatting and display details in the middle of the program flow.
 
 * `EventListener`: Receives events, send by a reporter and runs the `EventHandler`. Usually spins upa separate thread so it won't block.
@@ -65,7 +65,7 @@ use std::time::Duration;
 use std::{io, thread};
 use storyteller::{
 	event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-	FinishProcessing, Reporter,
+	FinishProcessing, EventReporter,
 };
 
 // --- In the main function, we'll instantiate a Reporter, a Listener, and an EventHandler.
