@@ -30,7 +30,7 @@ yare = "1.0.1"
 # --- Examples
 
 [[example]]
-name = "json_lines"
+name = "json"
 required-features = ["channel_reporter"]
 
 [[example]]
