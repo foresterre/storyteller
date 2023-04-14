@@ -19,5 +19,5 @@ jobs:
 
     continue-on-error: ${{ matrix.checks == 'advisories' }}
     steps:
-      - uses: actions/checkout@v3.5.1
+      - uses: actions/checkout@v3.5.2
       - uses: EmbarkStudios/cargo-deny-action@v1
