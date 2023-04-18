@@ -87,7 +87,7 @@ impl EventHandler for JsonHandler {
     fn handle(&self, event: Self::Event) {
         let serialized_event = serde_json::to_string(&event).unwrap();
 
-        println!("{}", serialized_event);
+        eprintln!("{}", serialized_event);
     }
 }
 
