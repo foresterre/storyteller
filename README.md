@@ -54,181 +54,102 @@ Click [here](https://raw.githubusercontent.com/foresterre/storyteller/main/docs/
 
 Storyteller is used by [cargo-msrv](https://github.com/foresterre/cargo-msrv/tree/44444c55608edb749c3cbcd5b6983d7f8846b452/src/reporter) since `v0.16`. To preview how events are specified, you could click around in its [event](https://github.com/foresterre/cargo-msrv/tree/44444c55608edb749c3cbcd5b6983d7f8846b452/src/reporter/event) module. In the [handler](https://github.com/foresterre/cargo-msrv/tree/44444c55608edb749c3cbcd5b6983d7f8846b452/src/reporter/handler) module, several handlers can be found, such as one which writes JSON, one which prints pretty human readable output, one which prints minimal final result output used by shell commands, one which discards output and one which is used for integration testing.
 
-### Hello world Example
+### A taste of [storyteller](https://github.com/foresterre/storyteller)
 
 ```rust
-use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::cell::RefCell;
+use std::hash::Hasher;
 use std::io::{Stderr, Write};
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{io, thread};
+use storyteller::{EventHandler, FinishProcessing};
+
 use storyteller::{
-	event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-	FinishProcessing, EventReporter,
+    event_channel, ChannelEventListener, ChannelReporter, EventListener, EventReporter,
 };
 
-// --- In the main function, we'll instantiate a Reporter, a Listener, and an EventHandler.
-//     For the reporter and listener, we'll use implementations included with the library.
-//     The EventHandler must be defined by us, and can be found below.
-//     We also need to define our event type, which can also be found below.
+#[derive(serde::Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Event {
+    DiceThrow { throw: u8 },
+    YouWin,
+    YouLose,
+}
+
+#[derive(Default)]
+struct JsonHandler;
+
+impl EventHandler for JsonHandler {
+    type Event = Event;
+
+    fn handle(&self, event: Self::Event) {
+        let serialized_event = serde_json::to_string(&event).unwrap();
+
+        println!("{}", serialized_event);
+    }
+}
 
 // See the test function `bar` in src/tests.rs for an example where the handler is a progress bar.
 fn main() {
-	let (sender, receiver) = event_channel::<ExampleEvent>();
+    let (sender, receiver) = event_channel::<Event>();
 
-	// Handlers are implemented by you. Here you find one which writes jsonlines messages to stderr.
-	// This can be anything, for example a progress bar (see src/tests.rs for an example of this),
-	// a fake reporter which collects events for testing or maybe even a "MultiHandler<'h>" which
-	// consists of a Vec<&'h dyn EventHandler> and executes multiple handlers under the hood.
-	//
-	// Its implementation can be found below.
-	let handler = JsonHandler::default();
+    // Handlers are implemented by you. Here you find one which writes jsonlines messages to stderr.
+    // This can be anything, for example a progress bar (see src/tests.rs for an example of this),
+    // a fake reporter which collects events for testing or maybe even a "MultiHandler<'h>" which
+    // consists of a Vec<&'h dyn EventHandler> and executes multiple handlers under the hood.
+    let handler = JsonHandler::default();
 
-	// This one is included with the library. It just needs to be hooked up with a channel.
-	let reporter = ChannelReporter::new(sender);
+    // This one is included with the library. It just needs to be hooked up with a channel.
+    let reporter = ChannelReporter::new(sender);
 
-	// This one is also included with the library. It also needs to be hooked up with a channel.
-	// It's EventListener implementation spawns a thread in which event messages will be handled.
-	// Events are send to this thread using channels, therefore the name ChannelEventListener ✨.
-	let listener = ChannelEventListener::new(receiver);
+    // This one is also included with the library. It also needs to be hooked up with a channel.
+    let listener = ChannelEventListener::new(receiver);
 
-	// Here we use the jsonlines handler we defined above, in combination with the default `EventListener`
-	// implementation on the `ChannelEventListener` we used above.
-	//
-	//  As described above, it spawns a thread which handles updates, so it won't block.
-	let event_handler = Arc::new(handler);
-	let finalize_handler = listener.run_handler(event_handler);
+    // Here we use the JsonHandler we defined above, in combination with the default `EventListener`
+    // and  `ChannelEventListener` defined above.
+    //
+    // If we don't run the handler, we'll end up in an infinite loop, because our `reporter.disconnect()`
+    // below will block until it receives a Disconnect message.
+    let fin = listener.run_handler(Arc::new(handler));
 
-	// Run your program's logic
-	my_programming_logic(&reporter).unwrap();
+    // Now onto this program, let's play a game of dice!
+    for _ in 0..100 {
+        let dice = roll_dice();
+        reporter
+            .report_event(Event::DiceThrow { throw: dice })
+            .unwrap();
 
-	// First we disconnect the channel, so the thread which handles the events can be finished.
-	reporter.disconnect().unwrap();
-	// Next, we allow our event handler to finish processing its queue of unprocessed events.
-	// This will block the main thread, until all unprocessed events are processed.
-	finalize_handler.finish_processing().unwrap();
+        if dice >= 3 {
+            reporter.report_event(Event::YouWin).unwrap();
+        } else {
+            reporter.report_event(Event::YouLose).unwrap();
+        }
+
+        thread::sleep(Duration::from_millis(100))
+    }
+
+    // Within the ChannelReporter, the sender is dropped, thereby disconnecting the channel
+    // Already sent events can still be processed.
+    let _ = reporter.disconnect();
+
+    // To keep the processing of already sent events alive, we block the handler
+    let _ = fin.finish_processing();
 }
 
-fn my_programming_logic(reporter: &ChannelReporter<ExampleEvent>) -> Result<(), Box<dyn Error>> {
-	// These are the events we would call during the regular flow of our program, for example
-	// if we use the library in a package manager, before, during or after downloading dependencies.
-	// The use any-event-type-you-like nature allows you to go as crazy as you would like.
-	reporter.report_event(ExampleEvent::text("One"))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::text("Two before reset"))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Reset))?;
-	reporter.report_event(ExampleEvent::text("Two after reset"))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::text("Three"))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::event(MyEvent::Increment))?;
-	reporter.report_event(ExampleEvent::text("Four"))?;
+static SEED: AtomicU32 = AtomicU32::new(1);
 
-	Ok(())
+fn roll_dice() -> u8 {
+    let mut random = SEED.load(Ordering::SeqCst);
+    random ^= random << 13;
+    random ^= random >> 17;
+    random ^= random << 5;
+    SEED.store(random, Ordering::SeqCst);
+
+    (random % 6 + 1) as u8
 }
 
-// --- Here we define out Event Type.
-
-// if we would have imported third-party libraries, we could have done: #[derive(serde::Serialize)]
-#[derive(Debug)]
-enum ExampleEvent {
-	Event(MyEvent),
-	Text(String),
-}
-
-impl Display for ExampleEvent {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.write_fmt(format_args!("{:?}", self))
-	}
-}
-
-impl ExampleEvent {
-	pub fn event(event: MyEvent) -> Self {
-		Self::Event(event)
-	}
-
-	pub fn text<T: AsRef<str>>(text: T) -> Self {
-		Self::Text(text.as_ref().to_string())
-	}
-}
-
-impl ExampleEvent {
-	// Here we create some json by hand, so you can copy the example without importing other libraries, but you can also
-	// replace all of this by, say `serde_json`, and derive a complete json output of your `Event` definition all at once (by design™ =)).
-	pub fn to_json(&self) -> String {
-		match self {
-			Self::Event(event) => event.to_json(),
-			Self::Text(msg) => format!("{{ \"event\" : \"message\", \"value\" : \"{}\" }}", msg),
-		}
-	}
-}
-
-#[derive(Debug)]
-enum MyEvent {
-	Increment,
-	Reset,
-}
-
-impl MyEvent {
-	pub fn to_json(&self) -> String {
-		match self {
-			Self::Increment => format!("{{ \"event\" : \"increment\" }}"),
-			Self::Reset => format!("{{ \"event\" : \"reset\" }}"),
-		}
-	}
-}
-
-impl Display for MyEvent {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.write_fmt(format_args!("{:?}", self))
-	}
-}
-
-// --- Here we define an Event Handler which deals with the user output.
-
-struct JsonHandler {
-	stream: Arc<Mutex<Stderr>>,
-}
-
-impl Default for JsonHandler {
-	fn default() -> Self {
-		Self {
-			stream: Arc::new(Mutex::new(io::stderr())),
-		}
-	}
-}
-
-impl EventHandler for JsonHandler {
-	type Event = ExampleEvent;
-
-	fn handle(&self, event: Self::Event) {
-		/* simulate some busy work, so we can more easily follow the user output */
-		thread::sleep(Duration::from_secs(1));
-		/* simulate some busy work */
-		let message = event.to_json();
-
-		let mut out = self.stream.lock().unwrap();
-		let _ = writeln!(out, "{}", message);
-		let _ = out.flush();
-	}
-
-	fn finish(&self) {
-		let mut out = self.stream.lock().unwrap();
-
-		let message = format!("{{ \"event\" : \"program-finished\", \"success\" : true }}");
-
-		let _ = writeln!(out, "{}", message);
-		let _ = out.flush();
-	}
-}
 ```
 
 ## Origins
