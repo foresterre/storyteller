@@ -34,7 +34,7 @@ name = "json"
 required-features = ["channel_reporter"]
 
 [[example]]
-name = "readme"
+name = "minimal"
 required-features = ["channel_reporter"]
 
 # --- Integration tests
