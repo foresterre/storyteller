@@ -2,7 +2,18 @@
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.8.1...HEAD
+
+## [0.8.1] - 2023-06-05
+
+### Changed
+
+* Examples: updated `json` example to be more representable of actual usage
+* Examples: Renamed `json_lines` example to `json`
+* Examples: Renamed `readme` example to `minimal`
+* Docs: Fixed readme which still referenced to `EventReporter` as `Reporter`
+
+[0.8.1]: https://github.com/foresterre/storyteller/compare/v0.8.0...v0.8.1
 
 ## [0.8.0] - 2022-09-28
 
