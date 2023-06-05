@@ -1,10 +1,7 @@
-use std::cell::RefCell;
-use std::hash::Hasher;
-use std::io::{Stderr, Write};
-use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Arc;
+use std::thread;
 use std::time::Duration;
-use std::{io, thread};
 use storyteller::{EventHandler, FinishProcessing};
 
 use storyteller::{

@@ -37,7 +37,7 @@ impl EventHandler for CollectingHandler {
         let expected_event = self
             .expected_events
             .get(nth)
-            .expect(&format!("No such expected value on index '{}'", nth));
+            .unwrap_or_else(|| panic!("No such expected value on index '{}'", nth));
 
         // compare
         assert_eq!(expected_event, &event);

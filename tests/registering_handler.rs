@@ -1,7 +1,6 @@
 // A sample implementation which collects the events it receives
 extern crate core;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,

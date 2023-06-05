@@ -48,7 +48,7 @@ struct IndicatifHandler {
 impl Default for IndicatifHandler {
     fn default() -> Self {
         let bar = indicatif::ProgressBar::new(10);
-        bar.enable_steady_tick(250);
+        bar.enable_steady_tick(Duration::from_millis(250));
 
         Self { bar }
     }
@@ -100,7 +100,7 @@ impl EventHandler for JsonHandler {
     type Event = ExampleEvent;
 
     fn handle(&self, event: Self::Event) {
-        thread::sleep(Duration::from_secs(1));
+        thread::sleep(Duration::from_millis(100));
         let message = serde_json::to_string(&event).unwrap_or_default();
 
         let mut out = self.stdout.lock().unwrap();
