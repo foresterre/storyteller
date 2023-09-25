@@ -16,7 +16,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: checkout_repo
-        uses: actions/checkout@v4.0.0
+        uses: actions/checkout@v4.1.0
       - name: install_rust
         uses: actions-rs/toolchain@v1
         with:
