@@ -25,7 +25,7 @@ serde_json = "1"
 indicatif = "0.17.5"
 
 # parameterized tests
-yare = "1.0.2"
+yare = "2.0.0"
 
 # --- Examples
 
