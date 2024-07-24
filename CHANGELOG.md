@@ -1,8 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## Unreleased
 
-[Unreleased]: https://github.com/foresterre/storyteller/compare/v0.8.1...HEAD
+## [1.0.0] - 2024-07-24
+
+## Changed
+
+* `storyteller` MSRV is now 1.60
+
+[1.0.0]: https://github.com/foresterre/storyteller/compare/v0.8.1...v1.0.0
 
 ## [0.8.1] - 2023-06-05
 
@@ -35,7 +41,7 @@
 
 ### Fixed
 
-* Fix excessive packaged crate size 
+* Fix excessive packaged crate size
 
 [0.6.1]: https://github.com/foresterre/bisector/compare/v0.6.0...v0.6.1
 
