@@ -1,7 +1,7 @@
 [package]
 name = "storyteller"
-version = "0.8.1"
-edition = "2018"
+version = "1.0.0"
+edition = "2021"
 
 authors = ["Martijn Gribnau <garm@ilumeo.com>"]
 description = "Library focused on supporting user oriented output while supporting multiple output types (e.g. json, a progressbar, etc.)"
