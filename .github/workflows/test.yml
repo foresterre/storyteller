@@ -43,7 +43,7 @@ jobs:
             rust: nightly
     steps:
       - name: checkout_repository
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.1.7
 
       - name: install_rust
         uses: actions-rs/toolchain@v1
