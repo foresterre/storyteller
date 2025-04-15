@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [1.0.1] - 2025-05-15
+
+## Changed
+
+* `storyteller` now requires `crossbeam-channel >= 0.5.15`, when the `channel_reporter` feature is enabled
+
+[1.0.1]: https://github.com/foresterre/storyteller/compare/v1.0.0...v1.0.1
+
 ## [1.0.0] - 2024-07-24
 
 ## Changed
