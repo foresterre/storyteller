@@ -16,7 +16,7 @@ default = ["channel_reporter"]
 channel_reporter = ["crossbeam-channel"]
 
 [dependencies.crossbeam-channel]
-version = "0.5"
+version = "0.5.15"
 optional = true
 
 [dev-dependencies]
