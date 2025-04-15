@@ -28,4 +28,4 @@ jobs:
       - name: version_of_cargo_msrv
         run: cargo msrv --version
       - name: run_cargo_msrv
-        run: cargo msrv --ignore-lockfile --output-format json verify -- cargo check
+        run: cargo msrv verify --ignore-lockfile --output-format json
