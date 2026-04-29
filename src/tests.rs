@@ -7,7 +7,7 @@
 
 use crate::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    EventReporter, FinishProcessing,
+    EventReporter, HandlerGuard,
 };
 use serde::Serialize;
 use std::io::{Stderr, Write};
@@ -139,8 +139,8 @@ fn bar() {
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
     reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
 
-    reporter.disconnect().unwrap();
-    finalize_handle.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    finalize_handle.join(token).unwrap();
 }
 
 #[test]
@@ -171,6 +171,6 @@ fn json() {
     reporter.report_event(ExampleEvent::event(MyEvent::Increment));
     reporter.report_event(ExampleEvent::text("[status]\t\tFour"));
 
-    reporter.disconnect().unwrap();
-    finalize_handle.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    finalize_handle.join(token).unwrap();
 }

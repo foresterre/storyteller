@@ -44,6 +44,10 @@ name = "collecting_handler"
 required-features = ["channel_reporter"]
 
 [[test]]
+name = "handler_guard"
+required-features = ["channel_reporter"]
+
+[[test]]
 name = "multi_handler"
 required-features = ["channel_reporter"]
 

@@ -7,14 +7,13 @@
 //!
 //! The three building blocks are:
 //! * [`EventHandler`]: The event handler receives an event (our message type) as input,
-//!     and decides what to do with this message. Examples include a json-lines handler which
-//!     prints events to to stderr, a progress bar, a faked handler which collects events for
-//!     which may be asserted on in software tests, or a handler which sends websocket messages
-//!     for each event.
+//!   and decides what to do with this message. Examples include a json-lines handler which
+//!   prints events to stderr, a progress bar, a faked handler which collects events for
+//!   which may be asserted on in software tests, or a handler which sends websocket messages
+//!   for each event.
 //!     
 //! * [`EventReporter`]: Used to communicate messages to a user.
-//! * [`EventListener`]: Receives the messages, send by a reporter and runs the `EventHandler`
-//!     where appropriate.
+//! * [`EventListener`]: Receives the messages, send by a reporter and runs the `EventHandler` where appropriate.
 //!
 //! On top of these building blocks, a channel based implementation is provided which runs the `EventHandler`
 //! in a separate thread.
@@ -39,9 +38,9 @@ mod channel_reporter;
 #[cfg(feature = "channel_reporter")]
 pub use channel_reporter::{
     channel::event_channel, channel::EventReceiver, channel::EventSendError, channel::EventSender,
-    listener::ChannelEventListener, listener::ChannelFinalizeHandler, reporter::ChannelReporter,
-    reporter::EventReporterError,
+    listener::ChannelEventListener, listener::ChannelHandlerGuard, reporter::ChannelReporter,
+    reporter::DisconnectToken, reporter::EventReporterError,
 };
 pub use handler::EventHandler;
-pub use listener::{EventListener, FinishProcessing};
+pub use listener::{EventListener, HandlerGuard};
 pub use reporter::EventReporter;

@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use storyteller::{EventHandler, FinishProcessing};
+use storyteller::{EventHandler, HandlerGuard};
 
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventListener, EventReporter,
@@ -37,6 +37,7 @@ fn main() {
     // This can be anything, for example a progress bar (see src/tests.rs for an example of this),
     // a fake reporter which collects events for testing or maybe even a "MultiHandler<'h>" which
     // consists of a Vec<&'h dyn EventHandler> and executes multiple handlers under the hood.
+    #[allow(clippy::default_constructed_unit_structs)]
     let handler = JsonHandler::default();
 
     // This one is included with the library. It just needs to be hooked up with a channel.
@@ -68,12 +69,11 @@ fn main() {
         thread::sleep(Duration::from_millis(100))
     }
 
-    // Within the ChannelReporter, the sender is dropped, thereby disconnecting the channel
-    // Already sent events can still be processed.
-    let _ = reporter.disconnect();
+    // Disconnect the reporter... already sent events can still be processed by the handler thread.
+    let token = reporter.disconnect().unwrap();
 
-    // To keep the processing of already sent events alive, we block the handler
-    let _ = fin.finish_processing();
+    // Join the handler guard to wait for the handler thread to drain and exit.
+    fin.join(token).unwrap();
 }
 
 static SEED: AtomicU32 = AtomicU32::new(1);

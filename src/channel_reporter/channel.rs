@@ -13,7 +13,6 @@ pub fn event_channel<Event>() -> (EventSender<Event>, EventReceiver<Event>) {
 }
 
 /// A sender, used by `ChannelReporter` and `ChannelEventListener`.
-#[derive(Clone)]
 pub struct EventSender<T>(crossbeam_channel::Sender<T>);
 
 impl<T> EventSender<T> {

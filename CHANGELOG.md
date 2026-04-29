@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Added
+
+* `DisconnectToken` type, returned by `disconnect` and required by `join` to enforce correct call ordering at compile
+  time
+* `EventReporter::DisconnectToken` and `HandlerGuard::Token` associated types to support the above
+* `ChannelHandlerGuard::disconnect_and_join` as a one-step shorthand for `disconnect` followed by `join`
+* `ChannelHandlerGuard` now panics on drop if `join` was not called first
+
+### Changed
+
+* ⚠ Renamed `FinishProcessing` trait to `HandlerGuard`
+* ⚠ Renamed `FinishProcessing::finish_processing` to `HandlerGuard::join`. The method now takes a `token` argument of
+  type `Self::Token` (the `DisconnectToken` returned by `disconnect`)
+* ⚠ Renamed `ChannelFinalizeHandler` to `ChannelHandlerGuard`
+* ⚠ Renamed `EventListener::FinishProcessingHandle` associated type to `EventListener::Guard`
+* ⚠ `EventReporter::disconnect` now returns `Result<Self::DisconnectToken, Self::Err>` instead of
+  `Result<(), Self::Err>`
+
+### Removed
+
+* ⚠ Removed `Clone` from `EventSender`
+
 ## [1.0.1] - 2025-05-15
 
 ## Changed
@@ -61,16 +83,20 @@
 
 [0.6.0]: https://github.com/foresterre/bisector/compare/v0.5.0...v0.6.0
 
-
 ## [0.5.0] - 2022-06-16
 
 ### Changed
 
 * ⚠ Remove Disconnect Channel in `ChannelReporter`
-  * Removed all disconnect related types, such as: `Disconnect`, `DisconnectSender`, `DisconnectReceiver`, `disconnect_channel()`
-  * Split process of disconnecting channel and waiting for unfinished events to be processed. The former can be done via `Reporter::disconnect()`, the latter via the new `FinishProcessing::finish_processing()`.  As a result, if  `FinishProcessing::finish_processing()` is not called after `Reporter::disconnect()`, events may go unprocessed.
-    * Caution: if  `FinishProcessing::finish_processing()` is called before **`ChannelReporter::disconnect()`** (in case of the included `ChannelReporter` and `ChannelListener` implementations), the program will hang since the event handling thread will never be finish via the disconnect mechanism.
-  * A `FinishProcessing` implementation is now returned by `EventListener::run_handler`
+    * Removed all disconnect related types, such as: `Disconnect`, `DisconnectSender`, `DisconnectReceiver`,
+      `disconnect_channel()`
+    * Split process of disconnecting channel and waiting for unfinished events to be processed. The former can be done
+      via `Reporter::disconnect()`, the latter via the new `FinishProcessing::finish_processing()`. As a result, if
+      `FinishProcessing::finish_processing()` is not called after `Reporter::disconnect()`, events may go unprocessed.
+        * Caution: if  `FinishProcessing::finish_processing()` is called before **`ChannelReporter::disconnect()`** (in
+          case of the included `ChannelReporter` and `ChannelListener` implementations), the program will hang since the
+          event handling thread will never be finish via the disconnect mechanism.
+    * A `FinishProcessing` implementation is now returned by `EventListener::run_handler`
 
 [0.5.0]: https://github.com/foresterre/bisector/compare/v0.4.0...v0.5.0
 
@@ -78,7 +104,8 @@
 
 ### Changed
 
-* Let the reporter take anything which can be converted into an Event via `impl Into<Reporter::Event>` instead of raw `Reporter::Event` instances.
+* Let the reporter take anything which can be converted into an Event via `impl Into<Reporter::Event>` instead of raw
+  `Reporter::Event` instances.
 
 [0.4.0]: https://github.com/foresterre/bisector/compare/v0.3.2...v0.4.0
 
