@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [2.0.0-beta.1] - 2026-04-29
+
 ### Added
 
 * `DisconnectToken` type, returned by `disconnect` and required by `join` to enforce correct call ordering at compile
@@ -23,6 +25,8 @@
 ### Removed
 
 * ⚠ Removed `Clone` from `EventSender`
+
+[2.0.0-beta.1]: https://github.com/foresterre/storyteller/compare/v1.0.1...v2.0.0-beta.1
 
 ## [1.0.1] - 2025-05-15
 
