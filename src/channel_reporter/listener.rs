@@ -1,4 +1,6 @@
-use crate::listener::FinishProcessing;
+use crate::channel_reporter::reporter::{ChannelReporter, DisconnectToken, EventReporterError};
+use crate::listener::HandlerGuard;
+use crate::reporter::EventReporter;
 use crate::{EventHandler, EventListener, EventReceiver};
 use std::sync::Arc;
 use std::thread;
@@ -37,68 +39,99 @@ where
     Event: Send + 'static,
 {
     type Event = Event;
-    type FinishProcessingHandle = ChannelFinalizeHandler;
+    type Guard = ChannelHandlerGuard;
 
-    fn run_handler<H>(&self, handler: Arc<H>) -> Self::FinishProcessingHandle
+    fn run_handler<H>(&self, handler: Arc<H>) -> Self::Guard
     where
         H: EventHandler<Event = Self::Event> + 'static,
     {
         let event_receiver = self.event_receiver.clone();
 
-        let handle = thread::spawn(move || {
-            //
-            'evl: loop {
-                match event_receiver.recv() {
-                    Ok(message) => handler.handle(message),
-                    Err(_disconnect) => {
-                        handler.finish();
-                        break 'evl;
-                    }
+        let handle = thread::spawn(move || 'evl: loop {
+            match event_receiver.recv() {
+                Ok(message) => handler.handle(message),
+                Err(_disconnect) => {
+                    handler.finish();
+                    break 'evl;
                 }
             }
         });
 
-        ChannelFinalizeHandler::new(handle)
+        ChannelHandlerGuard::new(handle)
     }
 }
 
-/// A [`FinishProcessing`] implementation for the [`ChannelEventListener`].
-/// Used to wait for the [`EventHandler`] ran by the `listener` to finish processing
-/// events.
+/// A [`HandlerGuard`] for the [`ChannelEventListener`].
 ///
-/// ### Caution: Infinite looping
+/// Holds the handler thread and allows waiting for it to finish via [`HandlerGuard::join`].
 ///
-/// Calling [`FinishProcessing::finish_processing`] without first disconnecting
-/// the sender channel of the reporter will cause the program to be stuck in an infinite
-/// loop.
+/// ### Ordering
 ///
-/// The reason for this is that disconnecting the channel causes the loop to process
-/// a disconnect event, where we break out of the loop. If this disconnect does not
-/// happen, the thread processing events will not be finished, and
-/// [`FinishProcessing::finish_processing`] will block, since it waits for the thread
-/// to be finished.
+/// [`HandlerGuard::join`] requires a [`DisconnectToken`] proof token produced by
+/// [`ChannelReporter::disconnect`]. This enforces that at compile time that the reporter is
+/// disconnected before joining the handler thread. Calling them in the wrong order is a
+/// compile error iso a silent deadlock.
 ///
-/// To disconnect the sender channel of the reporter, call [`disconnect`].
+/// ### Drop behaviour
 ///
-/// [`FinishProcessing`]: crate::FinishProcessing
-/// [`EventHandler`]: crate::EventHandler
+/// Dropping this guard without calling [`join`] is a programming error and will panic
+/// (unless the thread is already unwinding).
+///
+/// [`HandlerGuard`]: crate::HandlerGuard
+/// [`HandlerGuard::join`]: crate::HandlerGuard::join
 /// [`ChannelEventListener`]: crate::ChannelEventListener
-/// [`disconnect`]: crate::EventReporter::disconnect
+/// [`ChannelReporter::disconnect`]: crate::ChannelReporter::disconnect
+/// [`join`]: HandlerGuard::join
 #[must_use]
-pub struct ChannelFinalizeHandler {
-    handle: JoinHandle<()>,
+pub struct ChannelHandlerGuard {
+    handle: Option<JoinHandle<()>>,
 }
 
-impl ChannelFinalizeHandler {
+impl ChannelHandlerGuard {
     fn new(handle: JoinHandle<()>) -> Self {
-        Self { handle }
+        Self {
+            handle: Some(handle),
+        }
     }
 }
 
-impl FinishProcessing for ChannelFinalizeHandler {
-    type Err = ();
+impl ChannelHandlerGuard {
+    /// Disconnect the reporter and join the handler guard in one step.
+    ///
+    /// This is a shorthand for:
+    ///
+    /// ```ignore
+    /// let token = reporter.disconnect()?;
+    /// guard.join(token)?;
+    /// ```
+    ///
+    /// If the handler thread panicked, the panic is re-raised in the calling thread.
+    pub fn disconnect_and_join<Event: Send>(
+        self,
+        reporter: ChannelReporter<Event>,
+    ) -> Result<(), EventReporterError<Event>> {
+        let token = reporter.disconnect()?;
+        self.join(token).expect("handler thread panicked");
+        Ok(())
+    }
+}
 
-    fn finish_processing(self) -> Result<(), Self::Err> {
-        self.handle.join().map_err(|_| ())
+impl HandlerGuard for ChannelHandlerGuard {
+    type Err = ();
+    type Token = DisconnectToken;
+
+    fn join(mut self, _token: DisconnectToken) -> Result<(), Self::Err> {
+        self.handle.take().unwrap().join().map_err(|_| ())
+    }
+}
+
+impl Drop for ChannelHandlerGuard {
+    fn drop(&mut self) {
+        if self.handle.is_some() && !thread::panicking() {
+            panic!(
+                "ChannelHandlerGuard dropped without calling join(). \
+                 Call reporter.disconnect() then guard.join(token) before dropping"
+            );
+        }
     }
 }

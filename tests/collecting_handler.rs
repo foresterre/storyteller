@@ -5,14 +5,14 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    EventReporter, FinishProcessing,
+    EventReporter, HandlerGuard,
 };
 
 #[derive(Debug, Eq, PartialEq)]
 struct MyEvent(usize);
 
 // Caution: does only check whether `received` events match expected events
-// Must also use `FinalizeHandler::finish_processing` to ensure panic's are caught.
+// Must also use `ChannelHandlerGuard::join` to ensure panic's are caught.
 struct CollectingHandler {
     expected_events: Vec<MyEvent>,
     nth: AtomicUsize,
@@ -79,8 +79,8 @@ fn test() {
         reporter.report_event(MyEvent(i)).unwrap();
     }
 
-    reporter.disconnect().unwrap();
-    fin.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    fin.join(token).unwrap();
 }
 
 #[yare::parameterized(
@@ -103,6 +103,6 @@ fn expect_failure(expected_events: Vec<MyEvent>) {
         reporter.report_event(MyEvent(i)).unwrap();
     }
 
-    reporter.disconnect().unwrap();
-    fin.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    fin.join(token).unwrap();
 }

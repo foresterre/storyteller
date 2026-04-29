@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::{io, thread};
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    EventReporter, FinishProcessing,
+    EventReporter, HandlerGuard,
 };
 
 // --- In the main function, we'll instantiate a Reporter, a Listener, and an EventHandler.
@@ -39,16 +39,16 @@ fn main() {
     //
     //  As described above, it spawns a thread which handles updates, so it won't block.
     let event_handler = Arc::new(handler);
-    let finalize_handler = listener.run_handler(event_handler);
+    let guard = listener.run_handler(event_handler);
 
     // Run your program's logic
     my_programming_logic(&reporter).unwrap();
 
-    // First we disconnect the channel, so the thread which handles the events can be finished.
-    reporter.disconnect().unwrap();
-    // Next, we allow our event handler to finish processing its queue of unprocessed events.
-    // This will block the main thread, until all unprocessed events are processed.
-    finalize_handler.finish_processing().unwrap();
+    // Disconnect the channel. This consumes the reporter and returns a disconnect token.
+    let token = reporter.disconnect().unwrap();
+    // Join the guard. The token ensures disconnect was called first, so the handler
+    // thread is guaranteed to exit. Blocks until all queued events are processed.
+    guard.join(token).unwrap();
 }
 
 fn my_programming_logic(reporter: &ChannelReporter<ExampleEvent>) -> Result<(), Box<dyn Error>> {

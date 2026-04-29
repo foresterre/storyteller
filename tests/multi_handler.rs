@@ -2,15 +2,15 @@
 extern crate core;
 
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    EventReporter, FinishProcessing,
+    EventReporter, HandlerGuard,
 };
 
 // Caution: does only check whether `received` events match expected events
-// Must also use `FinalizeHandler::finish_processing` to ensure panic's are caught.
+// Must also use `ChannelHandlerGuard::join` to ensure panic's are caught.
 struct MultiHandler<EventT: Clone> {
     handlers: Vec<Box<dyn EventHandler<Event = EventT>>>,
 }
@@ -36,8 +36,14 @@ impl<EventT: Clone + Sync> EventHandler for MultiHandler<EventT> {
     type Event = EventT;
 
     fn handle(&self, event: Self::Event) {
-        for handle in &self.handlers {
-            handle.handle(event.clone())
+        for handler in &self.handlers {
+            handler.handle(event.clone())
+        }
+    }
+
+    fn finish(&self) {
+        for handler in &self.handlers {
+            handler.finish();
         }
     }
 }
@@ -96,6 +102,39 @@ impl<EventT: Send + Sync + Into<usize>> EventHandler for SummingHandler<EventT> 
     }
 }
 
+struct FinishFlagHandler {
+    finished: Arc<AtomicBool>,
+}
+
+impl EventHandler for FinishFlagHandler {
+    type Event = usize;
+    fn handle(&self, _: Self::Event) {}
+    fn finish(&self) {
+        self.finished.store(true, Ordering::SeqCst);
+    }
+}
+
+#[test]
+fn finish_delegates_to_sub_handlers() {
+    let (event_sender, event_receiver) = event_channel::<usize>();
+    let reporter = ChannelReporter::new(event_sender);
+    let listener = ChannelEventListener::new(event_receiver);
+    let flag1 = Arc::new(AtomicBool::new(false));
+    let flag2 = Arc::new(AtomicBool::new(false));
+    let mut multi_handler = MultiHandler::<usize>::new();
+    multi_handler.add_handler(Box::new(FinishFlagHandler {
+        finished: flag1.clone(),
+    }));
+    multi_handler.add_handler(Box::new(FinishFlagHandler {
+        finished: flag2.clone(),
+    }));
+    let fin = listener.run_handler(Arc::new(multi_handler));
+    let token = reporter.disconnect().unwrap();
+    fin.join(token).unwrap();
+    assert!(flag1.load(Ordering::SeqCst));
+    assert!(flag2.load(Ordering::SeqCst));
+}
+
 #[test]
 fn test() {
     let (event_sender, event_receiver) = event_channel::<usize>();
@@ -120,11 +159,11 @@ fn test() {
         reporter.report_event(i).unwrap();
     }
 
-    reporter.disconnect().unwrap();
-    fin.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    fin.join(token).unwrap();
 
     // NB: Order of these statements is important. The assertions must be placed after
-    // finish_processing() to ensure all expected events have been processed
+    // join() to ensure all expected events have been processed
     let c1 = unsafe { handler.get_handler::<CountingHandler<usize>>(0) };
     assert_eq!(c1.count(), 5);
 

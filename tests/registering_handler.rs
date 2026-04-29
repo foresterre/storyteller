@@ -4,14 +4,14 @@ extern crate core;
 use std::sync::{Arc, Mutex};
 use storyteller::{
     event_channel, ChannelEventListener, ChannelReporter, EventHandler, EventListener,
-    EventReporter, FinishProcessing,
+    EventReporter, HandlerGuard,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct MyEvent(usize);
 
 // Caution: does only check whether `received` events match expected events
-// Must also use `FinalizeHandler::finish_processing` to ensure panic's are caught.
+// Must also use `ChannelHandlerGuard::join` to ensure panic's are caught.
 struct RegisteringHandler {
     registered_events: Arc<Mutex<Vec<MyEvent>>>,
 }
@@ -54,10 +54,10 @@ fn test() {
         reporter.report_event(MyEvent(i)).unwrap();
     }
 
-    reporter.disconnect().unwrap();
-    fin.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    fin.join(token).unwrap();
 
-    // NB: Order is important, must be placed after finish_processing() to ensure all expected
+    // NB: Order is important, must be placed after join() to ensure all expected
     // events have been processed
     let expected = vec![MyEvent(0), MyEvent(1), MyEvent(2), MyEvent(3), MyEvent(4)];
     assert_eq!(handler.events(), expected);
@@ -83,10 +83,10 @@ fn expect_failure(expected_events: Vec<MyEvent>) {
         reporter.report_event(MyEvent(i)).unwrap();
     }
 
-    reporter.disconnect().unwrap();
-    fin.finish_processing().unwrap();
+    let token = reporter.disconnect().unwrap();
+    fin.join(token).unwrap();
 
-    // NB: Order is important, must be placed after finish_processing() to ensure all expected
+    // NB: Order is important, must be placed after join() to ensure all expected
     // events have been processed
     assert_eq!(handler.events(), expected_events);
 }
